@@ -2,15 +2,16 @@ import "@testing-library/jest-dom/vitest";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import common from "../../public/locales/en/common.json";
+import create from "../../public/locales/en/create.json";
 import explore from "../../public/locales/en/explore.json";
 import landing from "../../public/locales/en/landing.json";
 
 void i18n.use(initReactI18next).init({
   lng: "en",
   fallbackLng: "en",
-  ns: ["common", "landing", "explore"],
+  ns: ["common", "landing", "explore", "create"],
   defaultNS: "common",
-  resources: { en: { common, landing, explore } },
+  resources: { en: { common, landing, explore, create } },
   interpolation: { escapeValue: false },
   react: { useSuspense: false },
 });

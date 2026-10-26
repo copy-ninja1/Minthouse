@@ -29,6 +29,13 @@ export function SiteHeader({ showLaunchAction = false, className }: SiteHeaderPr
         >
           {t("nav.explore")}
         </Link>
+        <Link
+          to="/app/create"
+          className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-fg-muted transition-colors duration-150 hover:bg-sunken hover:text-fg data-[status=active]:text-fg"
+          activeOptions={{ exact: true }}
+        >
+          {t("nav.create")}
+        </Link>
         <ThemeToggle />
         {showLaunchAction ? (
           <Link to="/app" className={buttonStyles({ size: "sm" })}>

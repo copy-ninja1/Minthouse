@@ -2,7 +2,7 @@ import i18n from "i18next";
 import HttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
 
-export const I18N_NAMESPACES = ["common", "landing", "explore"] as const;
+export const I18N_NAMESPACES = ["common", "landing", "explore", "create"] as const;
 
 void i18n
   .use(HttpBackend)

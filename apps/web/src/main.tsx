@@ -1,3 +1,4 @@
+import "./polyfills";
 import "./styles.css";
 import "@/lib/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

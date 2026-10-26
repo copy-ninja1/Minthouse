@@ -33,7 +33,8 @@
     "clear": "Clear search",
     "noneTitle": "No launches yet",
     "noneBody": "Tokens appear here once their deployment is verified on-chain. You can still inspect any token by its address.",
-    "lookup": "Inspect by address"
+    "lookup": "Inspect by address",
+    "create": "Create a token"
   },
   "error": {
     "title": "Couldn't load tokens"

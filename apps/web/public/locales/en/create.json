@@ -1,0 +1,95 @@
+{
+  "title": "Create a token",
+  "subtitle": "You sign the launch in your own wallet. It is listed here only after Minthouse has checked the result on chain.",
+  "unavailable": {
+    "title": "No networks are open for launches",
+    "body": "The API and this app don't currently share a network you can launch on."
+  },
+  "modes": {
+    "legend": "Token type",
+    "bsc-erc20": {
+      "title": "BNB Chain",
+      "body": "An ERC-20 with a supply you choose."
+    },
+    "solana-spl": {
+      "title": "Solana SPL",
+      "body": "A standard SPL token with on-chain metadata."
+    },
+    "pumpfun": {
+      "title": "Pump.fun",
+      "body": "A bonding curve on the official Pump program."
+    }
+  },
+  "fields": {
+    "network": "Network",
+    "name": "Name",
+    "symbol": "Symbol",
+    "description": "Description",
+    "descriptionHint": "Optional. Shown with the logo.",
+    "website": "Website",
+    "twitter": "X / Twitter",
+    "telegram": "Telegram",
+    "socials": "Links",
+    "decimals": "Decimals",
+    "supply": "Initial supply",
+    "supplyHint": "Whole tokens. They are issued to the recipient in the creation transaction.",
+    "recipient": "Recipient",
+    "recipientHint": "Leave blank to send the supply to the connected wallet.",
+    "logo": "Logo",
+    "logoHint": "Square PNG, JPEG, or WebP, at least {{size}} pixels.",
+    "logoChange": "Change logo",
+    "minting": "Allow further minting",
+    "mintingHint": "The owner can mint more until minting is permanently disabled.",
+    "authority": "Mint authority",
+    "authorityRetain": "Keep mint authority",
+    "authorityRevoke": "Revoke mint authority now",
+    "metadataMutable": "Allow metadata updates later",
+    "initialBuy": "Initial buy (SOL)",
+    "initialBuyHint": "Optional. Bought in the same transaction as the launch. Zero means no buy.",
+    "slippage": "Slippage (%)",
+    "pumpSupply": "Supply and decimals are fixed by Pump.fun: 1,000,000,000 tokens, 6 decimals. Mint authority is removed."
+  },
+  "wallet": {
+    "connect": "Connect wallet",
+    "disconnect": "Disconnect",
+    "switch": "Switch to {{network}}",
+    "title": "Choose a wallet",
+    "body": "Minthouse never sees your keys. The wallet shows the transaction before you sign it.",
+    "empty": "No Solana wallet was found in this browser.",
+    "install": "Install",
+    "failed": "The wallet did not connect."
+  },
+  "actions": {
+    "submit": "Create token",
+    "working": "Creating…",
+    "another": "Create another"
+  },
+  "steps": {
+    "label": "Launch progress",
+    "publish": "Publish metadata",
+    "sign": "Sign in your wallet",
+    "verify": "Verify on chain"
+  },
+  "success": {
+    "title": "{{name}} is verified",
+    "body": "The chain matches what you requested, so the token is listed.",
+    "inspect": "View token"
+  },
+  "errors": {
+    "title": "The launch did not finish",
+    "wallet": "Connect the wallet that should create this token.",
+    "logo": "Add a PNG, JPEG, or WebP logo.",
+    "logoSmall": "Logo must be at least {{size}} pixels on each side.",
+    "logoRead": "That image could not be read.",
+    "chain": "Switch your wallet to {{network}} before creating the token."
+  },
+  "warnings": {
+    "mainnet": "This is {{network}}. The transaction spends real {{symbol}} and cannot be taken back.",
+    "mainnetConfirm": "I understand this creates a real token",
+    "storage": "Logo and metadata are stored temporarily on this server. Public explorers and Pump.fun may not be able to load them."
+  },
+  "summary": {
+    "title": "What you get",
+    "behavior": "After launch"
+  }
+}

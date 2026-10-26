@@ -1,4 +1,5 @@
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { SearchX, Sprout } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,9 +29,14 @@ export function TokenResults({ filters, onClearSearch }: TokenResultsProps) {
       </EmptyState>
     ) : (
       <EmptyState icon={<Sprout className="size-5" aria-hidden="true" />} title={t("empty.noneTitle")} body={t("empty.noneBody")}>
-        <a href="#inspect" className={buttonStyles({ variant: "secondary" })}>
-          {t("empty.lookup")}
-        </a>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Link to="/app/create" className={buttonStyles()}>
+            {t("empty.create")}
+          </Link>
+          <a href="#inspect" className={buttonStyles({ variant: "secondary" })}>
+            {t("empty.lookup")}
+          </a>
+        </div>
       </EmptyState>
     );
   }

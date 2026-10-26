@@ -5,6 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/stores/theme";
 import { routeTree } from "@/routeTree.gen";
 
+vi.mock("@minthouse/blockchain/pump", () => ({
+  fetchPumpProtocol: vi.fn(),
+  planPumpLaunch: vi.fn(),
+  PumpUnavailableError: class PumpUnavailableError extends Error {
+    override name = "PumpUnavailableError";
+  },
+}));
+
 vi.mock("@/api/endpoints", () => ({
   searchTokens: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
   fetchPublicConfig: vi.fn().mockResolvedValue({
@@ -54,5 +62,15 @@ describe("pages", () => {
     expect(await screen.findByRole("heading", { name: "No launches yet" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Inspect any token" })).toBeInTheDocument();
     expect(await screen.findByText(/development copies/i)).toBeInTheDocument();
+  });
+
+  it("renders the create form for every enabled launch mode", async () => {
+    renderRoute("/app/create");
+    expect(await screen.findByRole("heading", { name: "Create a token" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /BNB Chain/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Solana SPL/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Pump\.fun/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create token" })).toBeInTheDocument();
+    expect(screen.getByText(/never asks for your seed phrase/i)).toBeInTheDocument();
   });
 });
