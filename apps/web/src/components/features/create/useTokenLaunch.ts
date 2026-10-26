@@ -1,9 +1,12 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { getWalletClient, switchChain } from "wagmi/actions";
 import { useConfig, useConnection } from "wagmi";
 import {
+  getEvmNetwork,
   getNetwork,
   TX_ERROR_MESSAGES,
   type Deployment,
@@ -21,10 +24,12 @@ import { queryKeys } from "@/api/queries";
 import { ChainLaunchError } from "@/lib/chain-launch-error";
 import {
   type LaunchStep,
+  type TokenDeployer,
   LaunchFlowError,
   launchToken,
 } from "@/lib/launch-token";
-import { evmPublicClient, solanaConnection } from "@/lib/rpc";
+import { type LaunchSecret, readLaunchSecret } from "@/lib/launch-signer";
+import { evmPublicClient, rpcUrl, solanaConnection } from "@/lib/rpc";
 import { submitBscLaunch } from "@/lib/submit-bsc-launch";
 import { submitSolanaLaunch } from "@/lib/submit-solana-launch";
 
@@ -33,6 +38,9 @@ export type LaunchView =
   | { status: "running"; step: LaunchStep }
   | { status: "success"; deployment: Deployment }
   | { status: "error"; message: string; deployment: Deployment | null };
+
+const INVALID_LAUNCH_SECRET =
+  "That private key is not valid for this chain. Paste the key, not a seed phrase.";
 
 const launchApi = {
   uploadLogo: (file: File) => uploadLogo(file),
@@ -51,8 +59,17 @@ const launchApi = {
   getDeployment: (id: string) => getDeployment(id),
 };
 
+function redactSecret(message: string, secret: string | undefined): string {
+  const trimmed = secret?.trim();
+  if (!trimmed || trimmed.length < 8 || !message.includes(trimmed)) {
+    return message;
+  }
+  return TX_ERROR_MESSAGES.UNKNOWN;
+}
+
 /**
  * Runs one launch and keeps the visible step in state.
+ * A pasted private key signs in the browser. Otherwise the connected wallet signs.
  * Chain calls happen inside the deployer, after metadata is published.
  */
 export function useTokenLaunch() {
@@ -76,79 +93,174 @@ export function useTokenLaunch() {
     }
   };
 
-  const launch = async (token: TokenConfig, logo: File) => {
+  const bscWalletDeployer = (): TokenDeployer => ({
+    family: "bsc",
+    address: evm.address ?? "",
+    submit: async (requested) => {
+      if (requested.mode !== "bsc-erc20") {
+        throw new ChainLaunchError(
+          "UNKNOWN",
+          "This token is not a BNB Smart Chain launch.",
+          false,
+        );
+      }
+      if (!evm.address) {
+        throw new ChainLaunchError(
+          "WALLET_UNAVAILABLE",
+          TX_ERROR_MESSAGES.WALLET_UNAVAILABLE,
+          false,
+        );
+      }
+      return submitBscLaunch(
+        evmPublicClient(requested.network),
+        {
+          chainId: evm.chainId,
+          switchChain: async (chainId) => {
+            await switchChain(config, { chainId });
+          },
+          deployContract: async (args) => {
+            const wallet = await getWalletClient(config, {
+              chainId: args.chain.id,
+            });
+            return wallet.deployContract(args);
+          },
+        },
+        evm.address,
+        requested,
+      );
+    },
+  });
+
+  const bscKeyDeployer = (
+    launchSecret: Extract<LaunchSecret, { family: "bsc" }>,
+  ): TokenDeployer => ({
+    family: "bsc",
+    address: launchSecret.address,
+    submit: async (requested) => {
+      if (requested.mode !== "bsc-erc20") {
+        throw new ChainLaunchError(
+          "UNKNOWN",
+          "This token is not a BNB Smart Chain launch.",
+          false,
+        );
+      }
+      const account = privateKeyToAccount(launchSecret.privateKey);
+      const chainId = getEvmNetwork(requested.network).chainId;
+      return submitBscLaunch(
+        evmPublicClient(requested.network),
+        {
+          chainId,
+          switchChain: () => Promise.resolve(),
+          deployContract: async (args) => {
+            const wallet = createWalletClient({
+              account,
+              chain: args.chain,
+              transport: http(rpcUrl(requested.network)),
+            });
+            return wallet.deployContract(args);
+          },
+        },
+        account.address,
+        requested,
+      );
+    },
+  });
+
+  const solanaWalletDeployer = (): TokenDeployer => ({
+    family: "solana",
+    address: solana.publicKey?.toBase58() ?? "",
+    submit: async (requested, metadataUri) => {
+      if (
+        requested.mode === "bsc-erc20" ||
+        !solana.publicKey ||
+        !solana.signTransaction
+      ) {
+        throw new ChainLaunchError(
+          "WALLET_UNAVAILABLE",
+          TX_ERROR_MESSAGES.WALLET_UNAVAILABLE,
+          false,
+        );
+      }
+      return submitSolanaLaunch(
+        solanaConnection(requested.network),
+        {
+          publicKey: solana.publicKey,
+          signTransaction: solana.signTransaction,
+        },
+        requested,
+        metadataUri,
+      );
+    },
+  });
+
+  const solanaKeyDeployer = (
+    launchSecret: Extract<LaunchSecret, { family: "solana" }>,
+  ): TokenDeployer => ({
+    family: "solana",
+    address: launchSecret.address,
+    submit: async (requested, metadataUri) => {
+      if (requested.mode === "bsc-erc20") {
+        throw new ChainLaunchError(
+          "UNKNOWN",
+          "This token is not a Solana launch.",
+          false,
+        );
+      }
+      return submitSolanaLaunch(
+        solanaConnection(requested.network),
+        {
+          publicKey: launchSecret.keypair.publicKey,
+          signTransaction: (transaction) => {
+            transaction.sign([launchSecret.keypair]);
+            return Promise.resolve(transaction);
+          },
+        },
+        requested,
+        metadataUri,
+      );
+    },
+  });
+
+  const deployerFor = (
+    family: "bsc" | "solana",
+    launchSecret: LaunchSecret | null,
+  ): TokenDeployer => {
+    if (launchSecret?.family === "bsc") {
+      return bscKeyDeployer(launchSecret);
+    }
+    if (launchSecret?.family === "solana") {
+      return solanaKeyDeployer(launchSecret);
+    }
+    switch (family) {
+      case "bsc":
+        return bscWalletDeployer();
+      case "solana":
+        return solanaWalletDeployer();
+      default: {
+        const exhaustive: never = family;
+        throw new Error(`Unhandled chain family ${String(exhaustive)}`);
+      }
+    }
+  };
+
+  const launch = async (token: TokenConfig, logo: File, secret?: string) => {
     const family = getNetwork(token.network).family;
+    const launchSecret = secret ? readLaunchSecret(family, secret) : null;
+    if (secret && !launchSecret) {
+      update({
+        status: "error",
+        message: INVALID_LAUNCH_SECRET,
+        deployment: null,
+      });
+      return;
+    }
     update({ status: "running", step: "publish" });
     try {
       const deployment = await launchToken(
         {
           config: token,
           logo,
-          deployer:
-            family === "bsc"
-              ? {
-                  family: "bsc",
-                  address: evm.address ?? "",
-                  submit: async (requested, _metadataUri) => {
-                    if (requested.mode !== "bsc-erc20") {
-                      throw new ChainLaunchError(
-                        "UNKNOWN",
-                        "This token is not a BNB Smart Chain launch.",
-                        false,
-                      );
-                    }
-                    if (!evm.address) {
-                      throw new ChainLaunchError(
-                        "WALLET_UNAVAILABLE",
-                        TX_ERROR_MESSAGES.WALLET_UNAVAILABLE,
-                        false,
-                      );
-                    }
-                    return submitBscLaunch(
-                      evmPublicClient(requested.network),
-                      {
-                        chainId: evm.chainId,
-                        switchChain: async (chainId) => {
-                          await switchChain(config, { chainId });
-                        },
-                        deployContract: async (args) => {
-                          const wallet = await getWalletClient(config, {
-                            chainId: args.chain.id,
-                          });
-                          return wallet.deployContract(args);
-                        },
-                      },
-                      evm.address,
-                      requested,
-                    );
-                  },
-                }
-              : {
-                  family: "solana",
-                  address: solana.publicKey?.toBase58() ?? "",
-                  submit: async (requested, metadataUri) => {
-                    if (
-                      requested.mode === "bsc-erc20" ||
-                      !solana.publicKey ||
-                      !solana.signTransaction
-                    ) {
-                      throw new ChainLaunchError(
-                        "WALLET_UNAVAILABLE",
-                        TX_ERROR_MESSAGES.WALLET_UNAVAILABLE,
-                        false,
-                      );
-                    }
-                    return submitSolanaLaunch(
-                      solanaConnection(requested.network),
-                      {
-                        publicKey: solana.publicKey,
-                        signTransaction: solana.signTransaction,
-                      },
-                      requested,
-                      metadataUri,
-                    );
-                  },
-                },
+          deployer: deployerFor(family, launchSecret),
         },
         launchApi,
         (step) => {
@@ -158,10 +270,11 @@ export function useTokenLaunch() {
       update({ status: "success", deployment });
       void queryClient.invalidateQueries({ queryKey: queryKeys.tokens.all() });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN;
       update({
         status: "error",
-        message:
-          error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN,
+        message: redactSecret(message, secret),
         deployment: error instanceof LaunchFlowError ? error.deployment : null,
       });
     }

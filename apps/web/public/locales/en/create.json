@@ -1,6 +1,6 @@
 {
   "title": "Create a token",
-  "subtitle": "You sign the launch in your own wallet. It is listed here only after Minthouse has checked the result on chain.",
+  "subtitle": "Sign with a connected wallet, or with a private key that stays in this browser. The token is listed here only after Minthouse has checked the result on chain.",
   "unavailable": {
     "title": "No networks are open for launches",
     "body": "The API and this app don't currently share a network you can launch on."
@@ -37,7 +37,10 @@
     "supplyHintSolanaFit": "This supply fits with at most {{maxDecimals}} decimals. At {{decimals}} decimals the maximum is {{max}} whole tokens.",
     "supplyHintSolanaTooLarge": "This supply does not fit in an SPL token. Even at 0 decimals the maximum is {{max}} whole tokens.",
     "recipient": "Recipient",
-    "recipientHint": "Leave blank to send the supply to the connected wallet.",
+    "recipientHint": "Leave blank to send the supply to the account that signs this launch.",
+    "privateKey": "Private key",
+    "privateKeyHint": "Optional when a wallet is connected. It stays in this browser, signs only this launch, and is not saved or sent to Minthouse.",
+    "privateKeySigning": "This key will create the token as {{address}}.",
     "logo": "Logo",
     "logoHint": "Square PNG, JPEG, or WebP, at least {{size}} pixels.",
     "logoChange": "Change logo",
@@ -70,7 +73,7 @@
   "steps": {
     "label": "Launch progress",
     "publish": "Publish metadata",
-    "sign": "Sign in your wallet",
+    "sign": "Sign the launch",
     "verify": "Verify on chain"
   },
   "success": {
@@ -81,7 +84,8 @@
   "errors": {
     "title": "The launch did not finish",
     "configTitle": "Couldn't load launch settings",
-    "wallet": "Connect the wallet that should create this token.",
+    "wallet": "Connect a wallet, or paste the private key that should create this token.",
+    "privateKey": "That private key is not valid for this chain. Paste the key, not a seed phrase.",
     "logo": "Add a PNG, JPEG, or WebP logo.",
     "logoSmall": "Logo must be at least {{size}} pixels on each side.",
     "logoRead": "That image could not be read.",
@@ -90,7 +94,8 @@
   "warnings": {
     "mainnet": "This is {{network}}. The transaction spends real {{symbol}} and cannot be taken back.",
     "mainnetConfirm": "I understand this creates a real token",
-    "storage": "Logo and metadata are stored temporarily on this server. Public explorers and Pump.fun may not be able to load them."
+    "storage": "Logo and metadata are stored temporarily on this server. Public explorers and Pump.fun may not be able to load them.",
+    "signer": "Connect a wallet, or paste a private key. A wallet signs inside the wallet. A private key is used only in this browser for this launch and is never stored or sent to Minthouse. Do not paste a seed phrase."
   },
   "summary": {
     "title": "What you get",

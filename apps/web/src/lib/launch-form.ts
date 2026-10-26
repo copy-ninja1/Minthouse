@@ -182,7 +182,7 @@ function fieldErrorsFromZod(
 
 /**
  * Turns the form into the same config the API validates.
- * An empty recipient becomes the connected wallet.
+ * An empty recipient becomes the account that signs: the pasted key, or the connected wallet.
  */
 export function toTokenConfig(
   values: CreateFormValues,

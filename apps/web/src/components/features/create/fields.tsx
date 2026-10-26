@@ -52,6 +52,7 @@ type TextFieldProps = {
   autoComplete?: string;
   inputMode?: ComponentProps<"input">["inputMode"];
   spellCheck?: boolean;
+  type?: "text" | "password";
 };
 
 export function TextField({
@@ -66,19 +67,26 @@ export function TextField({
   autoComplete = "off",
   inputMode,
   spellCheck,
+  type = "text",
 }: TextFieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const masked = type === "password";
   return (
     <Field label={label} htmlFor={id} error={error} hint={hint}>
       <input
         id={id}
         name={id}
+        type={type}
         value={value}
         onChange={(event) => {
           onChange(event.target.value);
         }}
         placeholder={placeholder}
-        autoComplete={autoComplete}
+        autoComplete={masked ? "off" : autoComplete}
+        autoCapitalize={masked ? "off" : undefined}
+        autoCorrect={masked ? "off" : undefined}
+        data-1p-ignore={masked ? true : undefined}
+        data-lpignore={masked ? "true" : undefined}
         inputMode={inputMode}
         spellCheck={spellCheck ?? false}
         aria-invalid={error ? true : undefined}

@@ -3,7 +3,6 @@ import {
   NETWORKS,
   U64_MAX,
   maxDecimalsForWholeTokens,
-  WALLET_SECURITY_NOTICE,
   getEvmNetwork,
   shortenAddress,
   type LaunchMode,
@@ -18,6 +17,7 @@ import { useConnection } from "wagmi";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { buttonStyles } from "@/components/ui/Button";
 import { env } from "@/lib/env";
+import { launchSecretAddress } from "@/lib/launch-signer";
 import { cn } from "@/lib/cn";
 import {
   type CreateField,
@@ -68,6 +68,8 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [logo, setLogo] = useState<File | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [privateKey, setPrivateKey] = useState("");
+  const [privateKeyError, setPrivateKeyError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [mainnetConfirmed, setMainnetConfirmed] = useState(false);
   const { view, launch, reset } = useTokenLaunch();
@@ -82,11 +84,18 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
     config.pumpfunNetworks,
   );
   const networkInfo = NETWORKS[values.network];
-  const address =
+  const walletAddress =
     capabilities.family === "bsc"
       ? (evm.address ?? null)
       : (solana.publicKey?.toBase58() ?? null);
+  const secret = privateKey.trim();
+  const secretAddress = secret
+    ? launchSecretAddress(capabilities.family, secret)
+    : null;
+  const usingSecret = secret.length > 0;
+  const address = usingSecret ? secretAddress : walletAddress;
   const chainMismatch =
+    !usingSecret &&
     capabilities.family === "bsc" &&
     evm.isConnected &&
     evm.chainId !== getEvmNetwork(values.network).chainId;
@@ -133,6 +142,7 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
       initialSupply: defaultInitialSupply(mode),
     }));
     setFieldErrors({});
+    setPrivateKeyError(null);
     setMainnetConfirmed(false);
   };
 
@@ -175,14 +185,25 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
     const nextLogoError = logo
       ? logoFileError(logo, config.storage.maxLogoBytes)
       : t("errors.logo");
-    const walletError = address ? null : t("errors.wallet");
+    const signerError = address
+      ? null
+      : usingSecret
+        ? t("errors.privateKey")
+        : t("errors.wallet");
     const chainError = chainMismatch
       ? t("errors.chain", { network: networkInfo.label })
       : null;
-    setFieldErrors(parsed.ok ? {} : parsed.fieldErrors);
+    const nextFieldErrors = parsed.ok ? {} : { ...parsed.fieldErrors };
+    if (usingSecret && !secretAddress) {
+      delete nextFieldErrors.recipient;
+    }
+    setFieldErrors(nextFieldErrors);
     setLogoError(nextLogoError);
-    if (!parsed.ok || nextLogoError || walletError || chainError || !logo) {
-      setFormError(walletError ?? chainError);
+    setPrivateKeyError(usingSecret && !secretAddress ? signerError : null);
+    if (!parsed.ok || nextLogoError || signerError || chainError || !logo) {
+      setFormError(
+        usingSecret && !secretAddress ? null : (signerError ?? chainError),
+      );
       return;
     }
     if (networkInfo.isMainnet && !mainnetConfirmed) {
@@ -190,7 +211,8 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
       return;
     }
     setFormError(null);
-    void launch(parsed.config, logo);
+    setPrivateKeyError(null);
+    void launch(parsed.config, logo, usingSecret ? secret : undefined);
   };
 
   return (
@@ -363,6 +385,27 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
 
         <div className="flex flex-col gap-4">
           <WalletButton family={capabilities.family} network={values.network} />
+          <TextField
+            id="deployerKey"
+            label={t("fields.privateKey")}
+            value={privateKey}
+            onChange={(value) => {
+              setPrivateKey(value);
+              setPrivateKeyError(null);
+            }}
+            error={privateKeyError ?? undefined}
+            hint={t("fields.privateKeyHint")}
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {secretAddress ? (
+            <p className="text-xs text-fg-muted">
+              {t("fields.privateKeySigning", {
+                address: shortenAddress(secretAddress, 6),
+              })}
+            </p>
+          ) : null}
           <LaunchProgress view={view} />
           {view.status === "success" ? (
             <SuccessPanel
@@ -400,6 +443,8 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
                 reset();
                 setLogo(null);
                 setPreview(null);
+                setPrivateKey("");
+                setPrivateKeyError(null);
                 setMainnetConfirmed(false);
               }}
             >
@@ -424,7 +469,7 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
           {capabilities.supplyBehavior}
         </p>
         <p className="border-t border-line pt-4 text-sm text-pretty text-fg-muted">
-          {WALLET_SECURITY_NOTICE}
+          {t("warnings.signer")}
         </p>
       </aside>
     </div>

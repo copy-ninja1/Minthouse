@@ -104,8 +104,9 @@ describe("pages", () => {
     expect(
       screen.getByRole("button", { name: "Create token" }),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText("Private key")).toBeInTheDocument();
     expect(
-      screen.getByText(/never asks for your seed phrase/i),
+      screen.getByText(/never stored or sent to Minthouse/i),
     ).toBeInTheDocument();
   });
 
@@ -117,10 +118,33 @@ describe("pages", () => {
     );
     expect(await screen.findByText("Name is required")).toBeInTheDocument();
     expect(
-      screen.getByText("Connect the wallet that should create this token."),
+      screen.getByText(
+        "Connect a wallet, or paste the private key that should create this token.",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Add a PNG, JPEG, or WebP logo."),
+    ).toBeInTheDocument();
+
+    await user.type(
+      screen.getByLabelText("Private key"),
+      "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+    );
+    expect(screen.getByText(/0xf39Fd6/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Create token" }));
+    expect(
+      screen.queryByText(
+        "Connect a wallet, or paste the private key that should create this token.",
+      ),
+    ).not.toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText("Private key"));
+    await user.type(screen.getByLabelText("Private key"), "not-a-key");
+    await user.click(screen.getByRole("button", { name: "Create token" }));
+    expect(
+      screen.getByText(
+        "That private key is not valid for this chain. Paste the key, not a seed phrase.",
+      ),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("radio", { name: /Pump\.fun/i }));
