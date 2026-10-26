@@ -12,7 +12,9 @@ import {
 
 describe("wholeTokensToBaseUnits", () => {
   it("converts the documented BSC example exactly", () => {
-    expect(wholeTokensToBaseUnits("1000000000000000", 18)).toBe(10n ** 15n * 10n ** 18n);
+    expect(wholeTokensToBaseUnits("1000000000000000", 18)).toBe(
+      10n ** 15n * 10n ** 18n,
+    );
   });
 
   it("converts the documented Solana example exactly", () => {
@@ -37,6 +39,8 @@ describe("chain limits", () => {
   it("shows the documented Solana example does not fit in u64", () => {
     expect(fitsU64(wholeTokensToBaseUnits("1000000000000000", 9))).toBe(false);
     expect(fitsU64(wholeTokensToBaseUnits("18446744073", 9))).toBe(true);
+    expect(fitsU64(wholeTokensToBaseUnits("18", 18))).toBe(true);
+    expect(fitsU64(wholeTokensToBaseUnits("19", 18))).toBe(false);
     expect(fitsU64(U64_MAX + 1n)).toBe(false);
   });
 
@@ -49,12 +53,16 @@ describe("chain limits", () => {
 describe("parseTokenAmount", () => {
   it("parses decimals without floating point error", () => {
     expect(parseTokenAmount("0.1", 18)).toBe(100000000000000000n);
-    expect(parseTokenAmount("123456789.123456789", 9)).toBe(123456789123456789n);
+    expect(parseTokenAmount("123456789.123456789", 9)).toBe(
+      123456789123456789n,
+    );
     expect(parseTokenAmount("5", 0)).toBe(5n);
   });
 
   it("refuses to round away precision", () => {
-    expect(() => parseTokenAmount("0.0000000001", 9)).toThrow("At most 9 decimal places");
+    expect(() => parseTokenAmount("0.0000000001", 9)).toThrow(
+      "At most 9 decimal places",
+    );
   });
 });
 
@@ -66,7 +74,9 @@ describe("formatTokenAmount", () => {
   });
 
   it("truncates rather than rounds", () => {
-    expect(formatTokenAmount(1_999_999n, 6, { maxFractionDigits: 2 })).toBe("1.99");
+    expect(formatTokenAmount(1_999_999n, 6, { maxFractionDigits: 2 })).toBe(
+      "1.99",
+    );
   });
 
   it("round-trips with parseTokenAmount", () => {

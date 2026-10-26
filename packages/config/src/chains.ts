@@ -50,7 +50,14 @@ export const bscDeployEnvSchema = z
     TOKEN_MINTING_ENABLED: booleanString(true),
   })
   .superRefine((env, ctx) => {
-    checkSupplyFits(env.TOKEN_INITIAL_SUPPLY, env.TOKEN_DECIMALS, UINT256_MAX, "uint256", ctx, "TOKEN_INITIAL_SUPPLY");
+    checkSupplyFits(
+      env.TOKEN_INITIAL_SUPPLY,
+      env.TOKEN_DECIMALS,
+      UINT256_MAX,
+      "uint256",
+      ctx,
+      "TOKEN_INITIAL_SUPPLY",
+    );
   });
 export type BscDeployEnv = z.infer<typeof bscDeployEnvSchema>;
 
@@ -60,7 +67,11 @@ export const solanaConnectionEnvSchema = z.object({
   SOLANA_CLUSTER: z.enum(SOLANA_CLUSTERS).default("devnet"),
   SOLANA_RPC_URL: optionalUrl,
   /** Path to the operator's keypair file (Solana CLI format). The file itself never enters the repository. */
-  SOLANA_KEYPAIR_PATH: z.string().trim().min(1).default("~/.config/solana/id.json"),
+  SOLANA_KEYPAIR_PATH: z
+    .string()
+    .trim()
+    .min(1)
+    .default("~/.config/solana/id.json"),
 });
 export type SolanaConnectionEnv = z.infer<typeof solanaConnectionEnvSchema>;
 
@@ -71,7 +82,10 @@ export const solanaDeployEnvSchema = solanaConnectionEnvSchema
       .string()
       .trim()
       .min(1)
-      .refine((value) => new TextEncoder().encode(value).length <= 32, "At most 32 bytes"),
+      .refine(
+        (value) => new TextEncoder().encode(value).length <= 32,
+        "At most 32 bytes",
+      ),
     SOLANA_TOKEN_SYMBOL: z
       .string()
       .trim()
@@ -80,8 +94,8 @@ export const solanaDeployEnvSchema = solanaConnectionEnvSchema
       .number()
       .int()
       .min(0)
-      .max(9, "The SPL Token program supports at most 9 decimals")
-      .default(9),
+      .max(18, "SPL token decimals must be between 0 and 18")
+      .default(18),
     SOLANA_INITIAL_SUPPLY: wholeTokenAmountField,
     SOLANA_INITIAL_RECIPIENT: solanaAddressField.optional(),
     SOLANA_MINT_AUTHORITY: z.enum(["retain", "revoke"]).default("retain"),
@@ -94,6 +108,13 @@ export const solanaDeployEnvSchema = solanaConnectionEnvSchema
     SOLANA_TOKEN_TELEGRAM: telegramField,
   })
   .superRefine((env, ctx) => {
-    checkSupplyFits(env.SOLANA_INITIAL_SUPPLY, env.SOLANA_TOKEN_DECIMALS, U64_MAX, "SPL Token u64", ctx, "SOLANA_INITIAL_SUPPLY");
+    checkSupplyFits(
+      env.SOLANA_INITIAL_SUPPLY,
+      env.SOLANA_TOKEN_DECIMALS,
+      U64_MAX,
+      "SPL Token u64",
+      ctx,
+      "SOLANA_INITIAL_SUPPLY",
+    );
   });
 export type SolanaDeployEnv = z.infer<typeof solanaDeployEnvSchema>;

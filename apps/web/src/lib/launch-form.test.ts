@@ -26,6 +26,17 @@ describe("launch form", () => {
     expect(networksForLaunch("pumpfun", CLIENT, SERVER, [])).toEqual([]);
   });
 
+  it("defaults a Solana launch to 18 decimals and a supply that fits u64", () => {
+    const values = {
+      ...initialCreateForm("solana-spl", "solana-devnet"),
+      name: "Lifecycle",
+      symbol: "LIFE",
+    };
+    expect(values.decimals).toBe("18");
+    expect(values.initialSupply).toBe("1");
+    expect(toTokenConfig(values, WALLET).ok).toBe(true);
+  });
+
   it("builds an SPL config and sends the supply to the connected wallet when recipient is blank", () => {
     const values = {
       ...initialCreateForm("solana-spl", "solana-devnet"),

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { fitsU64, fitsUint256, wholeTokensToBaseUnits } from "../amounts.js";
+import {
+  U64_MAX,
+  fitsU64,
+  fitsUint256,
+  wholeTokensToBaseUnits,
+} from "../amounts.js";
 import { LAUNCH_MODE_CAPABILITIES } from "../launch-modes.js";
 import {
   boundedText,
@@ -57,7 +62,11 @@ export const bscTokenConfigSchema = z
       return;
     }
     if (!fitsUint256(raw)) {
-      ctx.addIssue({ code: "custom", path: ["initialSupply"], message: "Supply exceeds the uint256 limit" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["initialSupply"],
+        message: "Supply exceeds the uint256 limit",
+      });
     }
     if (raw === 0n && !config.mintingEnabled) {
       ctx.addIssue({
@@ -75,7 +84,7 @@ export const splTokenConfigSchema = z
     name: boundedText("Name", SOLANA_NAME_MAX_BYTES),
     symbol: tokenSymbol(SOLANA_SYMBOL_MAX_LENGTH),
     ...socialFields,
-    decimals: z.number().int().min(0).max(9),
+    decimals: z.number().int().min(0).max(18),
     initialSupply: wholeTokenAmountField,
     recipient: solanaAddressField,
     /** "revoke" removes mint authority in the creation transaction, fixing supply forever. */
@@ -89,17 +98,19 @@ export const splTokenConfigSchema = z
       return;
     }
     if (!fitsU64(raw)) {
+      const maxWhole = U64_MAX / 10n ** BigInt(config.decimals);
       ctx.addIssue({
         code: "custom",
         path: ["initialSupply"],
-        message: "Supply exceeds the SPL Token u64 limit for these decimals",
+        message: `Supply exceeds the SPL Token u64 limit for these decimals. The maximum is ${maxWhole} whole tokens.`,
       });
     }
     if (raw === 0n && config.mintAuthority === "revoke") {
       ctx.addIssue({
         code: "custom",
         path: ["initialSupply"],
-        message: "Revoking mint authority with zero supply would create an unusable token",
+        message:
+          "Revoking mint authority with zero supply would create an unusable token",
       });
     }
   });
@@ -119,7 +130,10 @@ export const slippageBpsField = z
 export const solAmountField = z
   .string()
   .trim()
-  .regex(/^(?:0|[1-9]\d*)(?:\.\d{1,9})?$/, "Enter a SOL amount like 0.5 (at most 9 decimal places)");
+  .regex(
+    /^(?:0|[1-9]\d*)(?:\.\d{1,9})?$/,
+    "Enter a SOL amount like 0.5 (at most 9 decimal places)",
+  );
 
 export const pumpfunConfigSchema = z.object({
   mode: z.literal("pumpfun"),

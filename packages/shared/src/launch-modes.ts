@@ -8,7 +8,12 @@ export type LaunchModeCapabilities = {
   family: ChainFamily;
   label: string;
   tokenStandard: string;
-  decimals: { min: number; max: number; default: number; configurable: boolean };
+  decimals: {
+    min: number;
+    max: number;
+    default: number;
+    configurable: boolean;
+  };
   supply: "creator-configured" | "protocol-fixed";
   /** Human-readable explanation of how supply can change after launch. */
   supplyBehavior: string;
@@ -52,7 +57,7 @@ export const LAUNCH_MODE_CAPABILITIES = {
     family: "solana",
     label: "Solana SPL token",
     tokenStandard: "SPL Token + Metaplex Token Metadata",
-    decimals: { min: 0, max: 9, default: 9, configurable: true },
+    decimals: { min: 0, max: 18, default: 18, configurable: true },
     supply: "creator-configured",
     supplyBehavior:
       "You choose the initial supply. The mint authority can mint more until it is revoked; revocation is permanent.",
@@ -61,7 +66,8 @@ export const LAUNCH_MODE_CAPABILITIES = {
     authorityTransfer: true,
     authorityRevoke: true,
     bondingCurveTrading: false,
-    metadataLocation: "Metaplex metadata account on-chain, pointing to a JSON document on IPFS.",
+    metadataLocation:
+      "Metaplex metadata account on-chain, pointing to a JSON document on IPFS.",
     networks: ["solana-mainnet", "solana-devnet", "solana-local"],
   },
   pumpfun: {
@@ -89,7 +95,9 @@ export const LAUNCH_MODE_CAPABILITIES = {
   },
 } as const satisfies Record<LaunchMode, LaunchModeCapabilities>;
 
-export function getLaunchModeCapabilities(mode: LaunchMode): LaunchModeCapabilities {
+export function getLaunchModeCapabilities(
+  mode: LaunchMode,
+): LaunchModeCapabilities {
   return LAUNCH_MODE_CAPABILITIES[mode];
 }
 

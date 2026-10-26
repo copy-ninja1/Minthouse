@@ -33,6 +33,7 @@
     "decimals": "Decimals",
     "supply": "Initial supply",
     "supplyHint": "Whole tokens. They are issued to the recipient in the creation transaction.",
+    "supplyHintSolana": "Whole tokens, at most {{max}} at {{decimals}} decimals. Issued to the recipient in the creation transaction.",
     "recipient": "Recipient",
     "recipientHint": "Leave blank to send the supply to the connected wallet.",
     "logo": "Logo",

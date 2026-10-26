@@ -1,6 +1,7 @@
 import {
   LAUNCH_MODE_CAPABILITIES,
   NETWORKS,
+  U64_MAX,
   WALLET_SECURITY_NOTICE,
   getEvmNetwork,
   shortenAddress,
@@ -21,6 +22,7 @@ import {
   type CreateField,
   type CreateFormValues,
   MIN_LOGO_SIDE,
+  defaultInitialSupply,
   initialCreateForm,
   logoFileError,
   modesForLaunch,
@@ -127,6 +129,7 @@ export function CreateTokenForm({ config }: CreateTokenFormProps) {
         ? current.network
         : (nextNetworks[0] ?? current.network),
       decimals: String(LAUNCH_MODE_CAPABILITIES[mode].decimals.default),
+      initialSupply: defaultInitialSupply(mode),
     }));
     setFieldErrors({});
     setMainnetConfirmed(false);
@@ -440,6 +443,13 @@ function ModeFields({
   ) => void;
 }) {
   const { t } = useTranslation("create");
+  const decimals = /^\d+$/.test(values.decimals.trim())
+    ? Number(values.decimals)
+    : null;
+  const solanaMaxWhole =
+    values.mode === "solana-spl" && decimals !== null && decimals <= 18
+      ? (U64_MAX / 10n ** BigInt(decimals)).toString()
+      : null;
 
   switch (values.mode) {
     case "bsc-erc20":
@@ -465,7 +475,14 @@ function ModeFields({
               onPatch("initialSupply", value);
             }}
             error={errors.initialSupply}
-            hint={t("fields.supplyHint")}
+            hint={
+              solanaMaxWhole
+                ? t("fields.supplyHintSolana", {
+                    max: solanaMaxWhole,
+                    decimals,
+                  })
+                : t("fields.supplyHint")
+            }
             inputMode="numeric"
             mono
           />

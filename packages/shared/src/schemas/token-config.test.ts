@@ -34,48 +34,119 @@ describe("tokenConfigSchema", () => {
     expect(tokenConfigSchema.safeParse(baseBsc).success).toBe(true);
   });
 
-  it("rejects 10 decimals on a standard SPL token", () => {
-    const result = tokenConfigSchema.safeParse({ ...baseSpl, decimals: 10 });
+  it("accepts 18 decimals when the supply fits in u64", () => {
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        decimals: 18,
+        initialSupply: "18",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects decimals above 18 on a standard SPL token", () => {
+    const result = tokenConfigSchema.safeParse({ ...baseSpl, decimals: 19 });
     expect(result.success).toBe(false);
   });
 
+  it("rejects an SPL supply that overflows u64 at 18 decimals", () => {
+    const result = tokenConfigSchema.safeParse({
+      ...baseSpl,
+      decimals: 18,
+      initialSupply: "19",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain("18 whole tokens");
+  });
+
   it("rejects an SPL supply that overflows u64", () => {
-    const result = tokenConfigSchema.safeParse({ ...baseSpl, initialSupply: "1000000000000000" });
+    const result = tokenConfigSchema.safeParse({
+      ...baseSpl,
+      initialSupply: "1000000000000000",
+    });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toContain("u64");
   });
 
   it("does not throw when the supply field itself is malformed", () => {
-    const result = tokenConfigSchema.safeParse({ ...baseSpl, initialSupply: "1.5" });
+    const result = tokenConfigSchema.safeParse({
+      ...baseSpl,
+      initialSupply: "1.5",
+    });
     expect(result.success).toBe(false);
   });
 
   it("rejects a BSC network for an SPL token", () => {
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, network: "bsc-testnet" }).success).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({ ...baseSpl, network: "bsc-testnet" })
+        .success,
+    ).toBe(false);
   });
 
   it("rejects a Solana recipient on BSC and a bad checksum", () => {
-    expect(tokenConfigSchema.safeParse({ ...baseBsc, recipient: SOLANA_RECIPIENT }).success).toBe(false);
     expect(
-      tokenConfigSchema.safeParse({ ...baseBsc, recipient: "0x70997970C51812dc3A010C7d01b50e0d17dc79c8" }).success,
+      tokenConfigSchema.safeParse({ ...baseBsc, recipient: SOLANA_RECIPIENT })
+        .success,
+    ).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseBsc,
+        recipient: "0x70997970C51812dc3A010C7d01b50e0d17dc79c8",
+      }).success,
     ).toBe(false);
   });
 
   it("rejects a zero-supply fixed token", () => {
-    expect(tokenConfigSchema.safeParse({ ...baseBsc, initialSupply: "0", mintingEnabled: false }).success).toBe(false);
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, initialSupply: "0", mintAuthority: "revoke" }).success).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseBsc,
+        initialSupply: "0",
+        mintingEnabled: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        initialSupply: "0",
+        mintAuthority: "revoke",
+      }).success,
+    ).toBe(false);
   });
 
   it("enforces Metaplex byte limits on Solana names", () => {
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, name: "x".repeat(33) }).success).toBe(false);
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, name: "🚀".repeat(9) }).success).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({ ...baseSpl, name: "x".repeat(33) }).success,
+    ).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({ ...baseSpl, name: "🚀".repeat(9) }).success,
+    ).toBe(false);
   });
 
   it("only accepts https social links on the expected hosts", () => {
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, twitter: "https://x.com/minthouse" }).success).toBe(true);
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, twitter: "https://evil.example/x.com" }).success).toBe(false);
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, website: "javascript:alert(1)" }).success).toBe(false);
-    expect(tokenConfigSchema.safeParse({ ...baseSpl, website: "http://insecure.example" }).success).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        twitter: "https://x.com/minthouse",
+      }).success,
+    ).toBe(true);
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        twitter: "https://evil.example/x.com",
+      }).success,
+    ).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        website: "javascript:alert(1)",
+      }).success,
+    ).toBe(false);
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        website: "http://insecure.example",
+      }).success,
+    ).toBe(false);
   });
 
   it("treats empty optional links as absent", () => {
@@ -99,8 +170,13 @@ describe("tokenConfigSchema", () => {
 
   it("rejects Pump.fun on BSC networks", () => {
     expect(
-      tokenConfigSchema.safeParse({ mode: "pumpfun", network: "bsc-mainnet", name: "P", symbol: "P", description: "" })
-        .success,
+      tokenConfigSchema.safeParse({
+        mode: "pumpfun",
+        network: "bsc-mainnet",
+        name: "P",
+        symbol: "P",
+        description: "",
+      }).success,
     ).toBe(false);
   });
 });

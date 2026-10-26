@@ -117,6 +117,11 @@ export function logoFileError(file: File, maxBytes: number): string | null {
 
 export const MIN_LOGO_SIDE = MIN_LOGO_DIMENSION;
 
+/** Whole-token default that fits the mode's default decimals. At 18 SPL decimals a u64 holds 18. */
+export function defaultInitialSupply(mode: LaunchMode): string {
+  return mode === "solana-spl" ? "1" : "1000000";
+}
+
 export function initialCreateForm(
   mode: LaunchMode,
   network: NetworkId,
@@ -131,7 +136,7 @@ export function initialCreateForm(
     twitter: "",
     telegram: "",
     decimals: String(LAUNCH_MODE_CAPABILITIES[mode].decimals.default),
-    initialSupply: "1000000",
+    initialSupply: defaultInitialSupply(mode),
     recipient: "",
     mintingEnabled: false,
     mintAuthority: "revoke",
