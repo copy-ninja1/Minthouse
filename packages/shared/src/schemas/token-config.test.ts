@@ -65,7 +65,17 @@ describe("tokenConfigSchema", () => {
       initialSupply: "1000000000000000",
     });
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.message).toContain("u64");
+    expect(result.error?.issues[0]?.message).toContain("at most 4 decimals");
+  });
+
+  it("accepts 10^15 whole tokens at 4 decimals", () => {
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        decimals: 4,
+        initialSupply: "1000000000000000",
+      }).success,
+    ).toBe(true);
   });
 
   it("does not throw when the supply field itself is malformed", () => {

@@ -34,6 +34,8 @@
     "supply": "Initial supply",
     "supplyHint": "Whole tokens. They are issued to the recipient in the creation transaction.",
     "supplyHintSolana": "Whole tokens, at most {{max}} at {{decimals}} decimals. Issued to the recipient in the creation transaction.",
+    "supplyHintSolanaFit": "This supply fits with at most {{maxDecimals}} decimals. At {{decimals}} decimals the maximum is {{max}} whole tokens.",
+    "supplyHintSolanaTooLarge": "This supply does not fit in an SPL token. Even at 0 decimals the maximum is {{max}} whole tokens.",
     "recipient": "Recipient",
     "recipientHint": "Leave blank to send the supply to the connected wallet.",
     "logo": "Logo",

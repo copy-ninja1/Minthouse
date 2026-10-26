@@ -12,6 +12,7 @@ const CLIENT = ["bsc-testnet", "solana-devnet", "solana-mainnet"] as const;
 const SERVER = ["bsc-testnet", "solana-devnet", "solana-mainnet"] as const;
 const PUMP = ["solana-devnet"] as const;
 const WALLET = "So11111111111111111111111111111111111111112";
+const EVM_WALLET = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
 
 describe("launch form", () => {
   it("offers Pump.fun only on clusters the API will verify", () => {
@@ -24,6 +25,26 @@ describe("launch form", () => {
       "solana-devnet",
     ]);
     expect(networksForLaunch("pumpfun", CLIENT, SERVER, [])).toEqual([]);
+  });
+
+  it("accepts 18 decimals and a 10^15 supply on BNB Chain", () => {
+    const values = {
+      ...initialCreateForm("bsc-erc20", "bsc-testnet"),
+      name: "My Token",
+      symbol: "MTK",
+      decimals: "18",
+      initialSupply: "1000000000000000",
+    };
+    const result = toTokenConfig(values, EVM_WALLET);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.config).toMatchObject({
+      mode: "bsc-erc20",
+      decimals: 18,
+      initialSupply: "1000000000000000",
+    });
   });
 
   it("defaults a Solana launch to 18 decimals and a supply that fits u64", () => {

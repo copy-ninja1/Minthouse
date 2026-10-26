@@ -87,6 +87,21 @@ export function fitsU64(value: bigint): boolean {
   return value >= 0n && value <= U64_MAX;
 }
 
+/**
+ * Highest decimals in `0..ceiling` for which `wholeTokens * 10^decimals` still fits in a u64.
+ * Returns null when the supply exceeds a u64 even at 0 decimals.
+ */
+export function maxDecimalsForWholeTokens(wholeTokens: bigint, ceiling = 18): number | null {
+  if (wholeTokens < 0n || wholeTokens > U64_MAX || !Number.isInteger(ceiling) || ceiling < 0) {
+    return null;
+  }
+  let decimals = 0;
+  while (decimals < ceiling && wholeTokens <= U64_MAX / 10n ** BigInt(decimals + 1)) {
+    decimals += 1;
+  }
+  return decimals;
+}
+
 /** Serialises a bigint for JSON transport. Amounts always travel as base-10 strings. */
 export function bigintToString(value: bigint): string {
   return value.toString(10);

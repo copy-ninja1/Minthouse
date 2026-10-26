@@ -3,6 +3,7 @@ import {
   U64_MAX,
   fitsU64,
   fitsUint256,
+  maxDecimalsForWholeTokens,
   wholeTokensToBaseUnits,
 } from "../amounts.js";
 import { LAUNCH_MODE_CAPABILITIES } from "../launch-modes.js";
@@ -99,10 +100,15 @@ export const splTokenConfigSchema = z
     }
     if (!fitsU64(raw)) {
       const maxWhole = U64_MAX / 10n ** BigInt(config.decimals);
+      const fitted = maxDecimalsForWholeTokens(BigInt(config.initialSupply));
+      const fit =
+        fitted === null
+          ? "It does not fit even at 0 decimals."
+          : `This supply fits with at most ${fitted} decimals.`;
       ctx.addIssue({
         code: "custom",
         path: ["initialSupply"],
-        message: `Supply exceeds the SPL Token u64 limit for these decimals. The maximum is ${maxWhole} whole tokens.`,
+        message: `Supply exceeds the SPL Token u64 limit for these decimals. The maximum is ${maxWhole} whole tokens. ${fit}`,
       });
     }
     if (raw === 0n && config.mintAuthority === "revoke") {

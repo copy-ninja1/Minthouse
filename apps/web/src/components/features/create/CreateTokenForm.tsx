@@ -2,6 +2,7 @@ import {
   LAUNCH_MODE_CAPABILITIES,
   NETWORKS,
   U64_MAX,
+  maxDecimalsForWholeTokens,
   WALLET_SECURITY_NOTICE,
   getEvmNetwork,
   shortenAddress,
@@ -450,6 +451,26 @@ function ModeFields({
     values.mode === "solana-spl" && decimals !== null && decimals <= 18
       ? (U64_MAX / 10n ** BigInt(decimals)).toString()
       : null;
+  const supplyWhole = /^(?:0|[1-9]\d*)$/.test(values.initialSupply.trim())
+    ? BigInt(values.initialSupply.trim())
+    : null;
+  const fittedDecimals =
+    supplyWhole === null ? null : maxDecimalsForWholeTokens(supplyWhole);
+  const supplyHint =
+    solanaMaxWhole === null || decimals === null
+      ? t("fields.supplyHint")
+      : supplyWhole !== null && supplyWhole > BigInt(solanaMaxWhole)
+        ? fittedDecimals === null
+          ? t("fields.supplyHintSolanaTooLarge", { max: U64_MAX.toString() })
+          : t("fields.supplyHintSolanaFit", {
+              maxDecimals: fittedDecimals,
+              max: solanaMaxWhole,
+              decimals,
+            })
+        : t("fields.supplyHintSolana", {
+            max: solanaMaxWhole,
+            decimals,
+          });
 
   switch (values.mode) {
     case "bsc-erc20":
@@ -475,14 +496,7 @@ function ModeFields({
               onPatch("initialSupply", value);
             }}
             error={errors.initialSupply}
-            hint={
-              solanaMaxWhole
-                ? t("fields.supplyHintSolana", {
-                    max: solanaMaxWhole,
-                    decimals,
-                  })
-                : t("fields.supplyHint")
-            }
+            hint={supplyHint}
             inputMode="numeric"
             mono
           />

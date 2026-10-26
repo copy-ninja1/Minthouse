@@ -6,6 +6,7 @@ import {
   fitsU64,
   fitsUint256,
   formatTokenAmount,
+  maxDecimalsForWholeTokens,
   parseTokenAmount,
   wholeTokensToBaseUnits,
 } from "./amounts.js";
@@ -42,6 +43,14 @@ describe("chain limits", () => {
     expect(fitsU64(wholeTokensToBaseUnits("18", 18))).toBe(true);
     expect(fitsU64(wholeTokensToBaseUnits("19", 18))).toBe(false);
     expect(fitsU64(U64_MAX + 1n)).toBe(false);
+  });
+
+  it("reports the decimals that fit a whole-token supply in u64", () => {
+    expect(maxDecimalsForWholeTokens(1000000000000000n)).toBe(4);
+    expect(fitsU64(wholeTokensToBaseUnits("1000000000000000", 4))).toBe(true);
+    expect(fitsU64(wholeTokensToBaseUnits("1000000000000000", 5))).toBe(false);
+    expect(maxDecimalsForWholeTokens(19n)).toBe(17);
+    expect(maxDecimalsForWholeTokens(U64_MAX + 1n)).toBeNull();
   });
 
   it("checks the uint256 ceiling", () => {
