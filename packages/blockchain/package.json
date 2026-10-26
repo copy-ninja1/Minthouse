@@ -1,0 +1,55 @@
+{
+  "name": "@minthouse/blockchain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chain clients: BSC ERC-20 deployment and management, Solana SPL builders, and the Pump.fun protocol adapter.",
+  "type": "module",
+  "exports": {
+    "./bsc": {
+      "@minthouse/source": "./src/bsc/index.ts",
+      "types": "./dist/bsc/index.d.ts",
+      "default": "./dist/bsc/index.js"
+    },
+    "./solana": {
+      "@minthouse/source": "./src/solana/index.ts",
+      "types": "./dist/solana/index.d.ts",
+      "default": "./dist/solana/index.js"
+    },
+    "./pump": {
+      "@minthouse/source": "./src/pump/index.ts",
+      "types": "./dist/pump/index.d.ts",
+      "default": "./dist/pump/index.js"
+    },
+    "./testing": {
+      "@minthouse/source": "./src/solana/testing/index.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src",
+    "fixtures": "tsx scripts/fetch-program-fixtures.ts"
+  },
+  "dependencies": {
+    "@metaplex-foundation/mpl-token-metadata": "3.4.0",
+    "@metaplex-foundation/umi": "1.6.0",
+    "@minthouse/shared": "workspace:*",
+    "@pump-fun/pump-sdk": "4.3.1",
+    "@solana/spl-token": "0.4.15",
+    "@solana/web3.js": "1.99.0",
+    "bn.js": "5.2.2",
+    "buffer": "6.0.3",
+    "viem": "2.57.11"
+  },
+  "devDependencies": {
+    "@solana/kit": "8.5.0",
+    "@types/bn.js": "^5.2.0",
+    "bs58": "6.0.0",
+    "litesvm": "1.6.1"
+  }
+}

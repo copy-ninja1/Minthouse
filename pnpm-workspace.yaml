@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - chains/*
+  - packages/*
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - '@swc/core'
+  - bufferutil
+  - esbuild
+  - prisma
+  - sharp
+  - utf-8-validate
+
+patchedDependencies:
+  '@pump-fun/agent-payments-sdk@1.0.7': patches/@pump-fun__agent-payments-sdk@1.0.7.patch
+
+peerDependencyRules:
+  allowedVersions:
+    typescript: 5 || 6

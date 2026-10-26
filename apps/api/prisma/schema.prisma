@@ -1,0 +1,116 @@
+// The chain is the source of truth. Rows here are an index and an audit trail:
+// a Deployment is only `completed`, and a Token only listed, after the API has
+// verified the on-chain state itself.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+  runtime      = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model MetadataAsset {
+  id             String   @id @default(uuid()) @db.Uuid
+  kind           String // "logo" | "document"
+  sha256         String
+  storage        String // "ipfs-pinata" | "local-dev"
+  persistent     Boolean
+  uri            String
+  trustWalletUri String?
+  mimeType       String
+  bytes          Int
+  width          Int?
+  height         Int?
+  /// Published metadata JSON, for kind = "document".
+  document       Json?
+  createdAt      DateTime @default(now())
+
+  deployments Deployment[]
+
+  @@unique([kind, storage, sha256])
+}
+
+model Deployment {
+  id                   String         @id @default(uuid()) @db.Uuid
+  idempotencyKey       String         @unique
+  mode                 String
+  family               String
+  network              String
+  creator              String
+  tokenAddress         String?
+  name                 String
+  symbol               String
+  decimals             Int
+  initialSupply        String
+  recipient            String?
+  config               Json
+  metadataId           String?        @db.Uuid
+  metadata             MetadataAsset? @relation(fields: [metadataId], references: [id])
+  metadataUri          String?
+  imageUri             String?
+  txId                 String?        @unique
+  evmNonce             Int?
+  lastValidBlockHeight BigInt?
+  status               String
+  errorCode            String?
+  verification         Json?
+  checkAttempts        Int            @default(0)
+  lastCheckedAt        DateTime?
+  submittedAt          DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  token Token?
+
+  @@index([status, lastCheckedAt])
+  @@index([creator, network])
+}
+
+model Token {
+  id                String      @id @default(uuid()) @db.Uuid
+  family            String
+  network           String
+  address           String
+  name              String
+  symbol            String
+  decimals          Int
+  totalSupply       String?
+  mode              String?
+  imageUri          String?
+  metadataUri       String?
+  source            String
+  deploymentId      String?     @unique @db.Uuid
+  deployment        Deployment? @relation(fields: [deploymentId], references: [id])
+  onchainVerifiedAt DateTime?
+  indexedAt         DateTime    @default(now())
+  createdAt         DateTime    @default(now())
+
+  @@unique([network, address])
+  @@index([createdAt, id])
+  @@index([symbol])
+}
+
+model Operation {
+  id             String    @id @default(uuid()) @db.Uuid
+  idempotencyKey String    @unique
+  type           String
+  family         String
+  network        String
+  wallet         String
+  target         String
+  txId           String?
+  status         String
+  errorCode      String?
+  summary        String
+  chainStatus    String    @default("unknown")
+  chainCheckedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([wallet, network, createdAt])
+  @@index([chainStatus, chainCheckedAt])
+}

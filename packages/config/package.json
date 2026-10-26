@@ -1,0 +1,30 @@
+{
+  "name": "@minthouse/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Environment variable schemas for every Minthouse application and operator script.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@minthouse/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./cli": {
+      "@minthouse/source": "./src/cli.ts",
+      "types": "./dist/cli.d.ts",
+      "default": "./dist/cli.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@minthouse/shared": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

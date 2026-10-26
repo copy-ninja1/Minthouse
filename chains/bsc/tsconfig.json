@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "node20",
+    "moduleResolution": "node16",
+    "types": ["node"],
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["hardhat.config.ts", "scripts/**/*.ts", "test/**/*.ts", "artifacts/**/*.d.ts"]
+}

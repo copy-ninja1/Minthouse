@@ -1,0 +1,47 @@
+{
+  "name": "minthouse",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source multi-chain token launchpad: BNB Smart Chain ERC-20, Solana SPL, and genuine Pump.fun launches.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.12.0 <23 || >=24.0.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build:packages": "pnpm --filter @minthouse/shared --filter @minthouse/config --filter @minthouse/blockchain run build",
+    "db:local:start": "scripts/local-postgres.sh start",
+    "db:local:stop": "scripts/local-postgres.sh stop",
+    "db:local:status": "scripts/local-postgres.sh status",
+    "db:local:destroy": "scripts/local-postgres.sh destroy",
+    "db:generate": "pnpm --filter @minthouse/api run db:generate",
+    "db:migrate": "pnpm --filter @minthouse/api run db:migrate",
+    "db:migrate:dev": "pnpm --filter @minthouse/api run db:migrate:dev",
+    "db:reset": "pnpm --filter @minthouse/api run db:reset",
+    "db:studio": "pnpm --filter @minthouse/api run db:studio",
+    "api:build": "pnpm run build:packages && pnpm --filter @minthouse/api run build",
+    "api:dev": "pnpm run build:packages && pnpm --filter @minthouse/api run dev",
+    "api:start": "pnpm --filter @minthouse/api run start",
+    "api:test": "pnpm --filter @minthouse/api run test",
+    "web:dev": "pnpm run build:packages && pnpm --filter @minthouse/web run dev",
+    "web:build": "pnpm run build:packages && pnpm --filter @minthouse/web run build",
+    "web:preview": "pnpm --filter @minthouse/web run preview",
+    "web:test": "pnpm --filter @minthouse/web run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.5",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

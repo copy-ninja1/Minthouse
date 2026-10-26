@@ -1,0 +1,48 @@
+{
+  "eyebrow": "Open-source token launchpad",
+  "title": "Mint a token.",
+  "titleEmphasis": "Prove it on-chain.",
+  "lede": "Launch an ERC-20 on BNB Smart Chain, a standard Solana SPL token, or a genuine Pump.fun coin. You sign every transaction in your own wallet, and nothing is shown as live until the chain confirms it.",
+  "cta": {
+    "primary": "Launch app",
+    "secondary": "Inspect a token"
+  },
+  "modes": {
+    "title": "Three launch modes",
+    "subtitle": "Each one follows its own chain's rules.",
+    "columns": {
+      "mode": "Mode",
+      "decimals": "Decimals",
+      "supply": "Supply",
+      "minting": "Later minting"
+    },
+    "rows": {
+      "bsc-erc20": { "name": "BNB Smart Chain", "standard": "ERC-20 · OpenZeppelin" },
+      "solana-spl": { "name": "Solana", "standard": "SPL · Metaplex metadata" },
+      "pumpfun": { "name": "Pump.fun", "standard": "Official bonding curve" }
+    },
+    "supply": {
+      "creator-configured": "You choose",
+      "protocol-fixed": "Fixed by protocol"
+    },
+    "minting": {
+      "allowed": "Until revoked",
+      "never": "Never"
+    },
+    "decimalsFixed": "{{value}}, fixed",
+    "footnote": "No hidden taxes, no upgradeable proxies, no admin backdoors."
+  },
+  "steps": {
+    "title": "How a launch works",
+    "configure": "Configure",
+    "publish": "Publish metadata",
+    "sign": "Sign in your wallet",
+    "verify": "Verified on-chain"
+  },
+  "recent": {
+    "title": "Recently launched",
+    "empty": "No verified launches yet.",
+    "unavailable": "Live launches are unavailable right now.",
+    "viewAll": "View all"
+  }
+}

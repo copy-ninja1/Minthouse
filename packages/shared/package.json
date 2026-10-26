@@ -1,0 +1,26 @@
+{
+  "name": "@minthouse/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chain-agnostic domain types, validation schemas, amount math, and transaction lifecycle rules.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@minthouse/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "zod": "4.6.7"
+  }
+}

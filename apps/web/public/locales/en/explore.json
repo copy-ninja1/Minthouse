@@ -1,0 +1,104 @@
+{
+  "title": "Explore tokens",
+  "subtitle": "Launches made through Minthouse, re-checked against the chain.",
+  "search": {
+    "label": "Search tokens",
+    "placeholder": "Name, ticker or address",
+    "submit": "Search",
+    "clear": "Clear search"
+  },
+  "filters": {
+    "label": "Filter by network",
+    "all": "All networks"
+  },
+  "card": {
+    "supply": "Supply",
+    "address": {
+      "bsc": "Contract",
+      "solana": "Mint"
+    },
+    "verified": "Verified {{time}}",
+    "unverified": "Awaiting on-chain check",
+    "inspect": "Inspect {{name}} ({{symbol}})",
+    "noLogo": "No logo"
+  },
+  "pagination": {
+    "loadMore": "Load more",
+    "loading": "Loading…",
+    "end": "You've reached the first launch."
+  },
+  "empty": {
+    "searchTitle": "No tokens match “{{q}}”",
+    "searchBody": "Try a ticker, a full address, or another network.",
+    "clear": "Clear search",
+    "noneTitle": "No launches yet",
+    "noneBody": "Tokens appear here once their deployment is verified on-chain. You can still inspect any token by its address.",
+    "lookup": "Inspect by address"
+  },
+  "error": {
+    "title": "Couldn't load tokens"
+  },
+  "lookup": {
+    "title": "Inspect any token",
+    "body": "Reads live from the chain, so it works for tokens launched anywhere, not only here.",
+    "network": "Network",
+    "address": "Token address",
+    "placeholder": {
+      "bsc": "0x…",
+      "solana": "Mint address"
+    },
+    "submit": "Inspect",
+    "invalid": "That isn't a valid {{network}} address.",
+    "required": "Enter a token address."
+  },
+  "status": {
+    "title": "This server",
+    "networks": "Networks",
+    "storage": "Logo storage",
+    "ipfs": "IPFS, pinned",
+    "local": "Local, temporary",
+    "localWarning": "Logos on this server are development copies and can disappear.",
+    "pumpfun": "Pump.fun",
+    "unavailable": "Not on these networks",
+    "offline": "Server status is unavailable."
+  },
+  "inspector": {
+    "loading": "Reading from {{network}}…",
+    "errorTitle": "Couldn't read this token",
+    "standard": "Standard",
+    "supply": "Total supply",
+    "baseUnits": "{{value}} base units",
+    "decimals": "Decimals",
+    "owner": "Owner",
+    "mintAuthority": "Mint authority",
+    "renounced": "Renounced",
+    "revoked": "Revoked",
+    "pendingOwner": "Pending owner",
+    "minting": "Minting",
+    "mintingEnabled": "Enabled",
+    "mintingDisabled": "Permanently disabled",
+    "mintingUnknown": "Not exposed by this contract",
+    "freeze": "Freeze authority",
+    "none": "None",
+    "metadata": "Metadata",
+    "mutable": "Mutable",
+    "immutable": "Immutable",
+    "notApplicable": "Not applicable",
+    "openMetadata": "Open metadata",
+    "explorer": "View on {{explorer}}",
+    "unknownMode": "External token",
+    "platform": "Launched through Minthouse",
+    "external": "Not launched through Minthouse",
+    "readAt": "Read live from {{network}} at {{time}}.",
+    "pump": {
+      "title": "Bonding curve",
+      "phase": "Phase",
+      "bonding": "Bonding",
+      "complete": "Curve complete",
+      "migrated": "Migrated to AMM",
+      "progress": "Curve progress",
+      "marketCap": "Market cap",
+      "creator": "Creator"
+    }
+  }
+}

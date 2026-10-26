@@ -1,0 +1,39 @@
+{
+  "brand": "Minthouse",
+  "nav": {
+    "label": "Primary",
+    "home": "Minthouse home",
+    "explore": "Explore",
+    "launchApp": "Launch app"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switchTo": "Switch to {{theme}} theme"
+  },
+  "actions": {
+    "copyAddress": "Copy address",
+    "copied": "Copied",
+    "retry": "Try again",
+    "close": "Close",
+    "backHome": "Back to home"
+  },
+  "modes": {
+    "bsc-erc20": "ERC-20",
+    "solana-spl": "SPL",
+    "pumpfun": "Pump.fun"
+  },
+  "security": {
+    "short": "We never ask for your seed phrase or private key."
+  },
+  "errors": {
+    "notFoundTitle": "Nothing minted here",
+    "notFoundBody": "This page doesn't exist. Check the address, or head back to the start.",
+    "genericTitle": "Something went wrong",
+    "genericBody": "The page hit an unexpected error. Trying again usually fixes it.",
+    "requestId": "Request ID {{id}}",
+    "envTitle": "Minthouse is misconfigured"
+  }
+}
