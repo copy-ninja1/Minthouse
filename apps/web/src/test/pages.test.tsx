@@ -5,6 +5,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/stores/theme";
 import { routeTree } from "@/routeTree.gen";
@@ -106,5 +107,24 @@ describe("pages", () => {
     expect(
       screen.getByText(/never asks for your seed phrase/i),
     ).toBeInTheDocument();
+  });
+
+  it("shows what is missing and switches fields with the launch mode", async () => {
+    const user = userEvent.setup();
+    renderRoute("/app/create");
+    await user.click(
+      await screen.findByRole("button", { name: "Create token" }),
+    );
+    expect(await screen.findByText("Name is required")).toBeInTheDocument();
+    expect(
+      screen.getByText("Connect the wallet that should create this token."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Add a PNG, JPEG, or WebP logo."),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: /Pump\.fun/i }));
+    expect(screen.getByLabelText("Initial buy (SOL)")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Initial supply")).not.toBeInTheDocument();
   });
 });

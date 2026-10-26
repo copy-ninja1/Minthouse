@@ -77,6 +77,7 @@
   },
   "errors": {
     "title": "The launch did not finish",
+    "configTitle": "Couldn't load launch settings",
     "wallet": "Connect the wallet that should create this token.",
     "logo": "Add a PNG, JPEG, or WebP logo.",
     "logoSmall": "Logo must be at least {{size}} pixels on each side.",

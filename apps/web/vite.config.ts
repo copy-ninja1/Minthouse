@@ -1,5 +1,9 @@
 import { fileURLToPath } from "node:url";
-import { findLeakedClientSecrets, formatIssues, webEnvSchema } from "@minthouse/config";
+import {
+  findLeakedClientSecrets,
+  formatIssues,
+  webEnvSchema,
+} from "@minthouse/config";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -14,17 +18,24 @@ function assertValidClientEnv(mode: string): void {
   const clientEnv = loadEnv(mode, process.cwd(), "VITE_");
   const leaked = findLeakedClientSecrets(clientEnv);
   if (leaked.length > 0) {
-    throw new Error(`Refusing to bundle secret-looking variables into the browser: ${leaked.join(", ")}`);
+    throw new Error(
+      `Refusing to bundle secret-looking variables into the browser: ${leaked.join(", ")}`,
+    );
   }
   const result = webEnvSchema.safeParse(clientEnv);
   if (!result.success) {
-    const lines = formatIssues(result.error).map((issue) => `  ${issue.variable}: ${issue.message}`);
+    const lines = formatIssues(result.error).map(
+      (issue) => `  ${issue.variable}: ${issue.message}`,
+    );
     throw new Error(`Invalid web environment:\n${lines.join("\n")}`);
   }
 }
 
 export default defineConfig(({ mode }) => {
   assertValidClientEnv(mode);
+  const apiUrl =
+    loadEnv(mode, process.cwd(), "VITE_").VITE_API_URL ??
+    "http://localhost:3000";
 
   return {
     plugins: [
@@ -37,7 +48,17 @@ export default defineConfig(({ mode }) => {
       alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
       conditions: [SOURCE_CONDITION, ...defaultClientConditions],
     },
-    server: { port: 5173, strictPort: true },
+    server: {
+      port: 5173,
+      strictPort: true,
+      proxy: {
+        "/api": {
+          target: apiUrl,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, "") || "/",
+        },
+      },
+    },
     preview: { port: 4173 },
   };
 });

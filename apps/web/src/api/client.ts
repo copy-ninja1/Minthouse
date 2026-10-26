@@ -20,8 +20,14 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * In dev the browser talks to the Vite server, which proxies `/api` to
+ * `VITE_API_URL`. Production calls the API origin directly.
+ */
+const baseURL = import.meta.env.DEV ? "/api" : env.VITE_API_URL;
+
 export const apiClient = axios.create({
-  baseURL: env.VITE_API_URL,
+  baseURL,
   timeout: 20_000,
   headers: { Accept: "application/json" },
 });
@@ -31,11 +37,18 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-apiClient.interceptors.response.use(undefined, (error: unknown) => Promise.reject(toApiRequestError(error)));
+apiClient.interceptors.response.use(undefined, (error: unknown) =>
+  Promise.reject(toApiRequestError(error)),
+);
 
 function toApiRequestError(error: unknown): ApiRequestError {
   if (!(error instanceof AxiosError)) {
-    return new ApiRequestError("Unexpected error while contacting the Minthouse API.", null, undefined, undefined);
+    return new ApiRequestError(
+      "Unexpected error while contacting the Minthouse API.",
+      null,
+      undefined,
+      undefined,
+    );
   }
   if (!error.response) {
     const message =
@@ -46,19 +59,37 @@ function toApiRequestError(error: unknown): ApiRequestError {
   }
   const parsed = apiErrorSchema.safeParse(error.response.data);
   if (parsed.success) {
-    return new ApiRequestError(parsed.data.message, parsed.data.statusCode, parsed.data.requestId, parsed.data.issues);
+    return new ApiRequestError(
+      parsed.data.message,
+      parsed.data.statusCode,
+      parsed.data.requestId,
+      parsed.data.issues,
+    );
   }
-  return new ApiRequestError(`The API responded with status ${error.response.status}.`, error.response.status, undefined, undefined);
+  return new ApiRequestError(
+    `The API responded with status ${error.response.status}.`,
+    error.response.status,
+    undefined,
+    undefined,
+  );
 }
 
 /**
  * Validates a response body against its shared schema. The API and web app
  * share these schemas, so a mismatch means a version skew worth surfacing.
  */
-export function parseResponse<Schema extends z.ZodType>(schema: Schema, data: unknown): z.output<Schema> {
+export function parseResponse<Schema extends z.ZodType>(
+  schema: Schema,
+  data: unknown,
+): z.output<Schema> {
   const result = schema.safeParse(data);
   if (!result.success) {
-    throw new ApiRequestError("The API returned data in an unexpected format.", null, undefined, undefined);
+    throw new ApiRequestError(
+      "The API returned data in an unexpected format.",
+      null,
+      undefined,
+      undefined,
+    );
   }
   return result.data;
 }

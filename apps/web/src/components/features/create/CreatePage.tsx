@@ -64,7 +64,11 @@ function ConfigBody({
       );
     case "error":
       return (
-        <ErrorState title={t("errors.title")} error={error} onRetry={onRetry} />
+        <ErrorState
+          title={t("errors.configTitle")}
+          error={error}
+          onRetry={onRetry}
+        />
       );
     case "success":
       return data ? <CreateTokenForm config={data} /> : null;
