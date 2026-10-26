@@ -45,15 +45,24 @@ export type LaunchSubmission = {
 export type TokenDeployer = {
   family: "bsc" | "solana";
   address: string;
-  submit: (config: TokenConfig, metadataUri: string) => Promise<LaunchSubmission>;
+  submit: (
+    config: TokenConfig,
+    metadataUri: string,
+  ) => Promise<LaunchSubmission>;
 };
 
 export type LaunchApi = {
   uploadLogo: (file: File) => Promise<LogoAsset>;
   publishMetadata: (body: PublishMetadataRequest) => Promise<PublishedMetadata>;
   createDeployment: (body: CreateDeploymentRequest) => Promise<Deployment>;
-  recordSubmission: (id: string, body: RecordSubmissionRequest) => Promise<Deployment>;
-  cancelDeployment: (id: string, body: CancelDeploymentRequest) => Promise<Deployment>;
+  recordSubmission: (
+    id: string,
+    body: RecordSubmissionRequest,
+  ) => Promise<Deployment>;
+  cancelDeployment: (
+    id: string,
+    body: CancelDeploymentRequest,
+  ) => Promise<Deployment>;
   getDeployment: (id: string) => Promise<Deployment>;
 };
 
@@ -68,7 +77,11 @@ function delay(ms: number): Promise<void> {
   });
 }
 
-async function cancelQuietly(api: LaunchApi, id: string, errorCode: CancelDeploymentRequest["errorCode"]): Promise<void> {
+async function cancelQuietly(
+  api: LaunchApi,
+  id: string,
+  errorCode: CancelDeploymentRequest["errorCode"],
+): Promise<void> {
   try {
     await api.cancelDeployment(id, errorCode ? { errorCode } : {});
   } catch {
@@ -76,17 +89,26 @@ async function cancelQuietly(api: LaunchApi, id: string, errorCode: CancelDeploy
   }
 }
 
-async function settle(api: LaunchApi, id: string, timing: Required<LaunchTiming>): Promise<Deployment> {
+async function settle(
+  api: LaunchApi,
+  id: string,
+  timing: Required<LaunchTiming>,
+): Promise<Deployment> {
   const started = Date.now();
   let deployment = await api.getDeployment(id);
-  while (!isTerminalStatus(deployment.status) && Date.now() - started < timing.verifyTimeoutMs) {
+  while (
+    !isTerminalStatus(deployment.status) &&
+    Date.now() - started < timing.verifyTimeoutMs
+  ) {
     await delay(timing.pollIntervalMs);
     deployment = await api.getDeployment(id);
   }
   if (deployment.status === "completed") {
     return deployment;
   }
-  const code = deployment.errorCode ?? (isTerminalStatus(deployment.status) ? "UNKNOWN" : "CONFIRMATION_TIMEOUT");
+  const code =
+    deployment.errorCode ??
+    (isTerminalStatus(deployment.status) ? "UNKNOWN" : "CONFIRMATION_TIMEOUT");
   throw new LaunchFlowError(TX_ERROR_MESSAGES[code], deployment);
 }
 
@@ -106,7 +128,10 @@ export async function launchToken(
   };
   const family = getNetwork(input.config.network).family;
   if (input.deployer.family !== family) {
-    throw new LaunchFlowError("The connected wallet is for a different chain than this token.", null);
+    throw new LaunchFlowError(
+      "The connected wallet is for a different chain than this token.",
+      null,
+    );
   }
   const creator = normalizeAddress(family, input.deployer.address);
 
@@ -125,7 +150,11 @@ export async function launchToken(
   });
 
   onStep("sign");
-  const idempotencyKey = await deriveIdempotencyKey({ creator, metadataId: metadata.id, config: input.config });
+  const idempotencyKey = await deriveIdempotencyKey({
+    creator,
+    metadataId: metadata.id,
+    config: input.config,
+  });
   let deployment = await api.createDeployment({
     idempotencyKey,
     creator,
@@ -140,8 +169,14 @@ export async function launchToken(
     onStep("verify");
     return settle(api, deployment.id, schedule);
   }
-  if (deployment.status === "failed" && !(deployment.errorCode && isSafeToRetry(deployment.errorCode))) {
-    throw new LaunchFlowError(TX_ERROR_MESSAGES[deployment.errorCode ?? "UNKNOWN"], deployment);
+  if (
+    deployment.status === "failed" &&
+    !(deployment.errorCode && isSafeToRetry(deployment.errorCode))
+  ) {
+    throw new LaunchFlowError(
+      TX_ERROR_MESSAGES[deployment.errorCode ?? "UNKNOWN"],
+      deployment,
+    );
   }
 
   let submitted: LaunchSubmission;
@@ -151,15 +186,20 @@ export async function launchToken(
     if (error instanceof ChainLaunchError && !error.broadcast) {
       await cancelQuietly(api, deployment.id, error.code);
     }
-    const message = error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN;
+    const message =
+      error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN;
     throw new LaunchFlowError(message, deployment);
   }
 
   deployment = await api.recordSubmission(deployment.id, {
     txId: submitted.txId,
     tokenAddress: submitted.tokenAddress,
-    ...(submitted.evmNonce === undefined ? {} : { evmNonce: submitted.evmNonce }),
-    ...(submitted.lastValidBlockHeight === undefined ? {} : { lastValidBlockHeight: submitted.lastValidBlockHeight }),
+    ...(submitted.evmNonce === undefined
+      ? {}
+      : { evmNonce: submitted.evmNonce }),
+    ...(submitted.lastValidBlockHeight === undefined
+      ? {}
+      : { lastValidBlockHeight: submitted.lastValidBlockHeight }),
   });
 
   onStep("verify");

@@ -79,7 +79,10 @@ export function networksForLaunch(
   pumpNetworks: readonly NetworkId[],
 ): NetworkId[] {
   return LAUNCH_MODE_CAPABILITIES[mode].networks.filter((network) => {
-    if (!clientNetworks.includes(network) || !serverNetworks.includes(network)) {
+    if (
+      !clientNetworks.includes(network) ||
+      !serverNetworks.includes(network)
+    ) {
       return false;
     }
     if (mode === "pumpfun" && !pumpNetworks.includes(network)) {
@@ -94,7 +97,11 @@ export function modesForLaunch(
   serverNetworks: readonly NetworkId[],
   pumpNetworks: readonly NetworkId[],
 ): LaunchMode[] {
-  return LAUNCH_MODES.filter((mode) => networksForLaunch(mode, clientNetworks, serverNetworks, pumpNetworks).length > 0);
+  return LAUNCH_MODES.filter(
+    (mode) =>
+      networksForLaunch(mode, clientNetworks, serverNetworks, pumpNetworks)
+        .length > 0,
+  );
 }
 
 export function logoFileError(file: File, maxBytes: number): string | null {
@@ -110,7 +117,10 @@ export function logoFileError(file: File, maxBytes: number): string | null {
 
 export const MIN_LOGO_SIDE = MIN_LOGO_DIMENSION;
 
-export function initialCreateForm(mode: LaunchMode, network: NetworkId): CreateFormValues {
+export function initialCreateForm(
+  mode: LaunchMode,
+  network: NetworkId,
+): CreateFormValues {
   return {
     mode,
     network,
@@ -152,7 +162,9 @@ function percentToBps(value: string): number | null {
   return bps;
 }
 
-function fieldErrorsFromZod(error: z.ZodError): Partial<Record<CreateField, string>> {
+function fieldErrorsFromZod(
+  error: z.ZodError,
+): Partial<Record<CreateField, string>> {
   const errors: Partial<Record<CreateField, string>> = {};
   for (const issue of error.issues) {
     const key = issue.path[0];
@@ -167,7 +179,10 @@ function fieldErrorsFromZod(error: z.ZodError): Partial<Record<CreateField, stri
  * Turns the form into the same config the API validates.
  * An empty recipient becomes the connected wallet.
  */
-export function toTokenConfig(values: CreateFormValues, creatorAddress: string | null): TokenConfigResult {
+export function toTokenConfig(
+  values: CreateFormValues,
+  creatorAddress: string | null,
+): TokenConfigResult {
   const recipient = values.recipient.trim() || creatorAddress || "";
   const decimals = parseWhole(values.decimals);
   const slippageBps = percentToBps(values.slippagePercent);
@@ -220,7 +235,8 @@ export function toTokenConfig(values: CreateFormValues, creatorAddress: string |
 
   const parsed = tokenConfigSchema.safeParse(candidate);
   const errors = parsed.success ? {} : fieldErrorsFromZod(parsed.error);
-  const needsRecipient = values.mode === "bsc-erc20" || values.mode === "solana-spl";
+  const needsRecipient =
+    values.mode === "bsc-erc20" || values.mode === "solana-spl";
   if (needsRecipient && recipient === "") {
     errors.recipient = "Connect a wallet, or paste a recipient address";
   }

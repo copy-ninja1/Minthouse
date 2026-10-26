@@ -20,7 +20,10 @@ export function Field({ label, htmlFor, error, hint, children }: FieldProps) {
       <label htmlFor={htmlFor} className="text-xs text-fg-muted">
         {label}
       </label>
-      <div data-error-id={error ? errorId : undefined} data-hint-id={hint && !error ? hintId : undefined}>
+      <div
+        data-error-id={error ? errorId : undefined}
+        data-hint-id={hint && !error ? hintId : undefined}
+      >
         {children}
       </div>
       {hint && !error ? (
@@ -51,7 +54,19 @@ type TextFieldProps = {
   spellCheck?: boolean;
 };
 
-export function TextField({ id, label, value, onChange, error, hint, placeholder, mono, autoComplete = "off", inputMode, spellCheck }: TextFieldProps) {
+export function TextField({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  hint,
+  placeholder,
+  mono,
+  autoComplete = "off",
+  inputMode,
+  spellCheck,
+}: TextFieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
     <Field label={label} htmlFor={id} error={error} hint={hint}>

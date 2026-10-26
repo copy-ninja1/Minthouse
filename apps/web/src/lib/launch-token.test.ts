@@ -1,7 +1,17 @@
-import { TX_ERROR_MESSAGES, splTokenConfigSchema, type Deployment, type LogoAsset, type PublishedMetadata } from "@minthouse/shared";
+import {
+  TX_ERROR_MESSAGES,
+  splTokenConfigSchema,
+  type Deployment,
+  type LogoAsset,
+  type PublishedMetadata,
+} from "@minthouse/shared";
 import { describe, expect, it, vi } from "vitest";
 import { ChainLaunchError } from "./chain-launch-error";
-import { type LaunchApi, type TokenDeployer, launchToken } from "./launch-token";
+import {
+  type LaunchApi,
+  type TokenDeployer,
+  launchToken,
+} from "./launch-token";
 
 const CREATOR = "So11111111111111111111111111111111111111112";
 const MINT = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
@@ -73,16 +83,39 @@ function api(overrides: Partial<LaunchApi> = {}): LaunchApi {
     uploadLogo: vi.fn().mockResolvedValue(logo),
     publishMetadata: vi.fn().mockResolvedValue(metadata),
     createDeployment: vi.fn().mockResolvedValue(deployment()),
-    recordSubmission: vi.fn().mockImplementation((_id: string, body: { txId: string; tokenAddress: string }) =>
-      deployment({ status: "submitted", txId: body.txId, tokenAddress: body.tokenAddress }),
-    ),
-    cancelDeployment: vi.fn().mockResolvedValue(deployment({ status: "cancelled", errorCode: "USER_REJECTED" })),
-    getDeployment: vi.fn().mockResolvedValue(deployment({ status: "completed", tokenAddress: MINT, txId: "sig" })),
+    recordSubmission: vi
+      .fn()
+      .mockImplementation(
+        (_id: string, body: { txId: string; tokenAddress: string }) =>
+          deployment({
+            status: "submitted",
+            txId: body.txId,
+            tokenAddress: body.tokenAddress,
+          }),
+      ),
+    cancelDeployment: vi
+      .fn()
+      .mockResolvedValue(
+        deployment({ status: "cancelled", errorCode: "USER_REJECTED" }),
+      ),
+    getDeployment: vi
+      .fn()
+      .mockResolvedValue(
+        deployment({ status: "completed", tokenAddress: MINT, txId: "sig" }),
+      ),
     ...overrides,
   };
 }
 
-function deployer(submit: TokenDeployer["submit"] = vi.fn().mockResolvedValue({ txId: "sig", tokenAddress: MINT, lastValidBlockHeight: 10 })): TokenDeployer {
+function deployer(
+  submit: TokenDeployer["submit"] = vi
+    .fn()
+    .mockResolvedValue({
+      txId: "sig",
+      tokenAddress: MINT,
+      lastValidBlockHeight: 10,
+    }),
+): TokenDeployer {
   return { family: "solana", address: CREATOR, submit };
 }
 
@@ -92,7 +125,11 @@ describe("launchToken", () => {
     const wallet = deployer();
     const steps: string[] = [];
     const result = await launchToken(
-      { config, logo: new File(["png"], "logo.png", { type: "image/png" }), deployer: wallet },
+      {
+        config,
+        logo: new File(["png"], "logo.png", { type: "image/png" }),
+        deployer: wallet,
+      },
       client,
       (step) => {
         steps.push(step);
@@ -102,27 +139,66 @@ describe("launchToken", () => {
 
     expect(steps).toEqual(["publish", "sign", "verify"]);
     expect(client.uploadLogo).toHaveBeenCalledOnce();
-    expect(client.publishMetadata).toHaveBeenCalledWith(expect.objectContaining({ name: "Lifecycle", symbol: "LIFE", logoAssetId: logo.id }));
+    expect(client.publishMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Lifecycle",
+        symbol: "LIFE",
+        logoAssetId: logo.id,
+      }),
+    );
     expect(wallet.submit).toHaveBeenCalledWith(config, metadata.metadataUri);
-    expect(client.recordSubmission).toHaveBeenCalledWith(deployment().id, expect.objectContaining({ txId: "sig", tokenAddress: MINT }));
+    expect(client.recordSubmission).toHaveBeenCalledWith(
+      deployment().id,
+      expect.objectContaining({ txId: "sig", tokenAddress: MINT }),
+    );
     expect(client.cancelDeployment).not.toHaveBeenCalled();
     expect(result.status).toBe("completed");
   });
 
   it("cancels the deployment when the wallet rejects before anything is broadcast", async () => {
     const client = api();
-    const wallet = deployer(() => Promise.reject(new ChainLaunchError("USER_REJECTED", TX_ERROR_MESSAGES.USER_REJECTED, false)));
-    await expect(launchToken({ config, logo: new File(["png"], "logo.png"), deployer: wallet }, client, () => undefined)).rejects.toMatchObject({
+    const wallet = deployer(() =>
+      Promise.reject(
+        new ChainLaunchError(
+          "USER_REJECTED",
+          TX_ERROR_MESSAGES.USER_REJECTED,
+          false,
+        ),
+      ),
+    );
+    await expect(
+      launchToken(
+        { config, logo: new File(["png"], "logo.png"), deployer: wallet },
+        client,
+        () => undefined,
+      ),
+    ).rejects.toMatchObject({
       message: TX_ERROR_MESSAGES.USER_REJECTED,
     });
-    expect(client.cancelDeployment).toHaveBeenCalledWith(deployment().id, { errorCode: "USER_REJECTED" });
+    expect(client.cancelDeployment).toHaveBeenCalledWith(deployment().id, {
+      errorCode: "USER_REJECTED",
+    });
     expect(client.recordSubmission).not.toHaveBeenCalled();
   });
 
   it("leaves the deployment open when the transaction may already have been sent", async () => {
     const client = api();
-    const wallet = deployer(() => Promise.reject(new ChainLaunchError("RPC_FAILURE", TX_ERROR_MESSAGES.RPC_FAILURE, true)));
-    await expect(launchToken({ config, logo: new File(["png"], "logo.png"), deployer: wallet }, client, () => undefined)).rejects.toMatchObject({
+    const wallet = deployer(() =>
+      Promise.reject(
+        new ChainLaunchError(
+          "RPC_FAILURE",
+          TX_ERROR_MESSAGES.RPC_FAILURE,
+          true,
+        ),
+      ),
+    );
+    await expect(
+      launchToken(
+        { config, logo: new File(["png"], "logo.png"), deployer: wallet },
+        client,
+        () => undefined,
+      ),
+    ).rejects.toMatchObject({
       message: TX_ERROR_MESSAGES.RPC_FAILURE,
     });
     expect(client.cancelDeployment).not.toHaveBeenCalled();
@@ -130,9 +206,19 @@ describe("launchToken", () => {
   });
 
   it("does not ask the wallet to sign a launch that is already verified", async () => {
-    const client = api({ createDeployment: vi.fn().mockResolvedValue(deployment({ status: "completed", tokenAddress: MINT })) });
+    const client = api({
+      createDeployment: vi
+        .fn()
+        .mockResolvedValue(
+          deployment({ status: "completed", tokenAddress: MINT }),
+        ),
+    });
     const wallet = deployer();
-    const result = await launchToken({ config, logo: new File(["png"], "logo.png"), deployer: wallet }, client, () => undefined);
+    const result = await launchToken(
+      { config, logo: new File(["png"], "logo.png"), deployer: wallet },
+      client,
+      () => undefined,
+    );
     expect(result.status).toBe("completed");
     expect(wallet.submit).not.toHaveBeenCalled();
   });

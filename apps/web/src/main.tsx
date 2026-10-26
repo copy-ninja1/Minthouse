@@ -12,7 +12,13 @@ import { routeTree } from "./routeTree.gen";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error) => failureCount < 2 && !(error instanceof ApiRequestError && error.status !== null && error.status < 500),
+      retry: (failureCount, error) =>
+        failureCount < 2 &&
+        !(
+          error instanceof ApiRequestError &&
+          error.status !== null &&
+          error.status < 500
+        ),
       refetchOnWindowFocus: false,
     },
   },

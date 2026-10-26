@@ -21,10 +21,21 @@ export function CreatePage() {
 
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
         <header>
-          <h1 className="font-display text-5xl leading-none text-balance">{t("title")}</h1>
-          <p className="mt-2 max-w-2xl text-fg-muted text-pretty">{t("subtitle")}</p>
+          <h1 className="font-display text-5xl leading-none text-balance">
+            {t("title")}
+          </h1>
+          <p className="mt-2 max-w-2xl text-fg-muted text-pretty">
+            {t("subtitle")}
+          </p>
         </header>
-        <ConfigBody status={config.status} data={config.data} error={config.error} onRetry={() => { void config.refetch(); }} />
+        <ConfigBody
+          status={config.status}
+          data={config.data}
+          error={config.error}
+          onRetry={() => {
+            void config.refetch();
+          }}
+        />
       </main>
     </div>
   );
@@ -52,7 +63,9 @@ function ConfigBody({
         </div>
       );
     case "error":
-      return <ErrorState title={t("errors.title")} error={error} onRetry={onRetry} />;
+      return (
+        <ErrorState title={t("errors.title")} error={error} onRetry={onRetry} />
+      );
     case "success":
       return data ? <CreateTokenForm config={data} /> : null;
     default: {

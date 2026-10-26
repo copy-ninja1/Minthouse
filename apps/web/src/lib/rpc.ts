@@ -1,7 +1,18 @@
 import { Connection } from "@solana/web3.js";
-import { type Chain, type PublicClient, createPublicClient, defineChain, http } from "viem";
+import {
+  type Chain,
+  type PublicClient,
+  createPublicClient,
+  defineChain,
+  http,
+} from "viem";
 import { bsc, bscTestnet } from "wagmi/chains";
-import { type NetworkId, getEvmNetwork, getSolanaNetwork, NETWORKS } from "@minthouse/shared";
+import {
+  type NetworkId,
+  getEvmNetwork,
+  getSolanaNetwork,
+  NETWORKS,
+} from "@minthouse/shared";
 import { env } from "@/lib/env";
 
 /** Browser RPC for a network: the optional override, otherwise the public default. */
@@ -67,7 +78,9 @@ export function solanaConnection(network: NetworkId): Connection {
 
 /** At least one chain, so wagmi's config tuple is satisfied when BSC is disabled. */
 export function configuredEvmChains(): readonly [Chain, ...Chain[]] {
-  const enabled = env.VITE_ENABLED_NETWORKS.filter((network) => NETWORKS[network].family === "bsc");
+  const enabled = env.VITE_ENABLED_NETWORKS.filter(
+    (network) => NETWORKS[network].family === "bsc",
+  );
   const selected = enabled.length > 0 ? enabled : (["bsc-testnet"] as const);
   const chains = selected.map((network) => evmChain(network));
   const [first, ...rest] = chains;

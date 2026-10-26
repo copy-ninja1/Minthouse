@@ -13,7 +13,8 @@ function endpointForChain(chainId: number): string {
       return rpcUrl(id);
     }
   }
-  const fallback = chains.find((chain) => chain.id === chainId)?.rpcUrls.default.http[0];
+  const fallback = chains.find((chain) => chain.id === chainId)?.rpcUrls.default
+    .http[0];
   if (!fallback) {
     throw new Error(`No RPC configured for chain ${chainId}`);
   }
@@ -21,10 +22,9 @@ function endpointForChain(chainId: number): string {
 }
 
 function transports() {
-  return Object.fromEntries(chains.map((chain) => [chain.id, http(endpointForChain(chain.id))])) as Record<
-    (typeof chains)[number]["id"],
-    ReturnType<typeof http>
-  >;
+  return Object.fromEntries(
+    chains.map((chain) => [chain.id, http(endpointForChain(chain.id))]),
+  ) as Record<(typeof chains)[number]["id"], ReturnType<typeof http>>;
 }
 
 const projectId = env.VITE_REOWN_PROJECT_ID;

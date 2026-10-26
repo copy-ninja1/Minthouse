@@ -5,8 +5,20 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { ChevronDown, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useConnect, useConnection, useDisconnect, useConnectors, useSwitchChain } from "wagmi";
-import { type ChainFamily, type NetworkId, NETWORKS, getEvmNetwork, shortenAddress } from "@minthouse/shared";
+import {
+  useConnect,
+  useConnection,
+  useDisconnect,
+  useConnectors,
+  useSwitchChain,
+} from "wagmi";
+import {
+  type ChainFamily,
+  type NetworkId,
+  NETWORKS,
+  getEvmNetwork,
+  shortenAddress,
+} from "@minthouse/shared";
 import { Button, buttonStyles } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
@@ -41,8 +53,12 @@ function WalletDialog({
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-fg/30 dark:bg-black/60" />
         <Dialog.Popup className="fixed inset-x-4 top-1/2 z-50 flex max-h-[70dvh] -translate-y-1/2 flex-col gap-3 overflow-y-auto rounded-2xl border border-line bg-surface p-5 shadow-xl sm:inset-x-auto sm:left-1/2 sm:w-[min(24rem,calc(100vw-3rem))] sm:-translate-x-1/2">
-          <Dialog.Title className="font-medium">{t("wallet.title")}</Dialog.Title>
-          <Dialog.Description className="text-sm text-fg-muted">{t("wallet.body")}</Dialog.Description>
+          <Dialog.Title className="font-medium">
+            {t("wallet.title")}
+          </Dialog.Title>
+          <Dialog.Description className="text-sm text-fg-muted">
+            {t("wallet.body")}
+          </Dialog.Description>
           {children}
         </Dialog.Popup>
       </Dialog.Portal>
@@ -50,11 +66,19 @@ function WalletDialog({
   );
 }
 
-function ConnectedAccount({ address, onDisconnect }: { address: string; onDisconnect: () => void }) {
+function ConnectedAccount({
+  address,
+  onDisconnect,
+}: {
+  address: string;
+  onDisconnect: () => void;
+}) {
   const { t } = useTranslation("create");
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-sunken px-3 py-2">
-      <span className="min-w-0 truncate font-mono text-sm">{shortenAddress(address, 4)}</span>
+      <span className="min-w-0 truncate font-mono text-sm">
+        {shortenAddress(address, 4)}
+      </span>
       <Button variant="ghost" size="sm" onClick={onDisconnect}>
         {t("wallet.disconnect")}
       </Button>
@@ -98,9 +122,13 @@ function EvmWallet({ network }: { network: NetworkId }) {
             variant="secondary"
             disabled={switching}
             onClick={() => {
-              void switchChain({ chainId: expectedChainId }).catch((error: unknown) => {
-                setFailure(error instanceof Error ? error.message : t("wallet.failed"));
-              });
+              void switchChain({ chainId: expectedChainId }).catch(
+                (error: unknown) => {
+                  setFailure(
+                    error instanceof Error ? error.message : t("wallet.failed"),
+                  );
+                },
+              );
             }}
           >
             {t("wallet.switch", { network: NETWORKS[network].label })}
@@ -129,7 +157,14 @@ function EvmWallet({ network }: { network: NetworkId }) {
                 }}
                 className="flex h-11 w-full items-center gap-3 rounded-lg border border-line px-3 text-left text-sm hover:bg-sunken disabled:opacity-50"
               >
-                {connector.icon ? <img src={connector.icon} alt="" className="size-5" /> : <Wallet className="size-4 text-fg-subtle" aria-hidden="true" />}
+                {connector.icon ? (
+                  <img src={connector.icon} alt="" className="size-5" />
+                ) : (
+                  <Wallet
+                    className="size-4 text-fg-subtle"
+                    aria-hidden="true"
+                  />
+                )}
                 {connector.name}
               </button>
             </li>
@@ -153,7 +188,13 @@ function SolanaWallet() {
   const pending = useRef<WalletName | null>(null);
 
   useEffect(() => {
-    if (!pending.current || !solana.wallet || solana.wallet.adapter.name !== pending.current || solana.connected || solana.connecting) {
+    if (
+      !pending.current ||
+      !solana.wallet ||
+      solana.wallet.adapter.name !== pending.current ||
+      solana.connected ||
+      solana.connecting
+    ) {
       return;
     }
     pending.current = null;
@@ -187,12 +228,16 @@ function SolanaWallet() {
     );
   }
 
-  const ordered = [...solana.wallets].sort((left, right) => rank(right.readyState) - rank(left.readyState));
+  const ordered = [...solana.wallets].sort(
+    (left, right) => rank(right.readyState) - rank(left.readyState),
+  );
 
   return (
     <div className="flex flex-col gap-2">
       <WalletDialog open={open} onOpenChange={setOpen}>
-        {ordered.length === 0 ? <p className="text-sm text-fg-muted">{t("wallet.empty")}</p> : null}
+        {ordered.length === 0 ? (
+          <p className="text-sm text-fg-muted">{t("wallet.empty")}</p>
+        ) : null}
         <ul className="flex flex-col gap-2">
           {ordered.map(({ adapter, readyState }) => (
             <li key={adapter.name}>
@@ -203,9 +248,20 @@ function SolanaWallet() {
                 }}
                 className="flex h-11 w-full items-center gap-3 rounded-lg border border-line px-3 text-left text-sm hover:bg-sunken"
               >
-                {adapter.icon ? <img src={adapter.icon} alt="" className="size-5" /> : <Wallet className="size-4 text-fg-subtle" aria-hidden="true" />}
+                {adapter.icon ? (
+                  <img src={adapter.icon} alt="" className="size-5" />
+                ) : (
+                  <Wallet
+                    className="size-4 text-fg-subtle"
+                    aria-hidden="true"
+                  />
+                )}
                 <span className="flex-1">{adapter.name}</span>
-                {readyState === WalletReadyState.NotDetected ? <span className="text-xs text-fg-subtle">{t("wallet.install")}</span> : null}
+                {readyState === WalletReadyState.NotDetected ? (
+                  <span className="text-xs text-fg-subtle">
+                    {t("wallet.install")}
+                  </span>
+                ) : null}
               </button>
             </li>
           ))}
@@ -253,7 +309,9 @@ export function NetworkSelect({
         id={id}
         value={value}
         onChange={(event) => {
-          const next = networks.find((network) => network === event.target.value);
+          const next = networks.find(
+            (network) => network === event.target.value,
+          );
           if (next) {
             onChange(next);
           }
@@ -266,9 +324,13 @@ export function NetworkSelect({
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-fg-subtle" aria-hidden="true" />
+      <ChevronDown
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-fg-subtle"
+        aria-hidden="true"
+      />
     </div>
   );
 }
 
-const selectClass = "h-10 w-full appearance-none rounded-lg border border-line-strong bg-surface pr-9 pl-3 text-sm";
+const selectClass =
+  "h-10 w-full appearance-none rounded-lg border border-line-strong bg-surface pr-9 pl-3 text-sm";

@@ -1,6 +1,12 @@
 import { splTokenConfigSchema } from "@minthouse/shared";
 import { describe, expect, it } from "vitest";
-import { initialCreateForm, logoFileError, modesForLaunch, networksForLaunch, toTokenConfig } from "./launch-form";
+import {
+  initialCreateForm,
+  logoFileError,
+  modesForLaunch,
+  networksForLaunch,
+  toTokenConfig,
+} from "./launch-form";
 
 const CLIENT = ["bsc-testnet", "solana-devnet", "solana-mainnet"] as const;
 const SERVER = ["bsc-testnet", "solana-devnet", "solana-mainnet"] as const;
@@ -9,8 +15,14 @@ const WALLET = "So11111111111111111111111111111111111111112";
 
 describe("launch form", () => {
   it("offers Pump.fun only on clusters the API will verify", () => {
-    expect(modesForLaunch(CLIENT, SERVER, PUMP)).toEqual(["bsc-erc20", "solana-spl", "pumpfun"]);
-    expect(networksForLaunch("pumpfun", CLIENT, SERVER, PUMP)).toEqual(["solana-devnet"]);
+    expect(modesForLaunch(CLIENT, SERVER, PUMP)).toEqual([
+      "bsc-erc20",
+      "solana-spl",
+      "pumpfun",
+    ]);
+    expect(networksForLaunch("pumpfun", CLIENT, SERVER, PUMP)).toEqual([
+      "solana-devnet",
+    ]);
     expect(networksForLaunch("pumpfun", CLIENT, SERVER, [])).toEqual([]);
   });
 
@@ -63,8 +75,17 @@ describe("launch form", () => {
   });
 
   it("rejects logos that are not images or are too large", () => {
-    expect(logoFileError(new File(["x"], "a.gif", { type: "image/gif" }), 2_000_000)).toMatch(/PNG/);
-    expect(logoFileError(new File([new Uint8Array(20)], "a.png", { type: "image/png" }), 10)).toMatch(/MB/);
-    expect(logoFileError(new File(["x"], "a.png", { type: "image/png" }), 2_000_000)).toBeNull();
+    expect(
+      logoFileError(new File(["x"], "a.gif", { type: "image/gif" }), 2_000_000),
+    ).toMatch(/PNG/);
+    expect(
+      logoFileError(
+        new File([new Uint8Array(20)], "a.png", { type: "image/png" }),
+        10,
+      ),
+    ).toMatch(/MB/);
+    expect(
+      logoFileError(new File(["x"], "a.png", { type: "image/png" }), 2_000_000),
+    ).toBeNull();
   });
 });

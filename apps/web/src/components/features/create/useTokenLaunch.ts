@@ -3,7 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { getWalletClient, switchChain } from "wagmi/actions";
 import { useConfig, useConnection } from "wagmi";
-import { getNetwork, TX_ERROR_MESSAGES, type Deployment, type TokenConfig } from "@minthouse/shared";
+import {
+  getNetwork,
+  TX_ERROR_MESSAGES,
+  type Deployment,
+  type TokenConfig,
+} from "@minthouse/shared";
 import {
   cancelDeployment,
   createDeployment,
@@ -14,7 +19,11 @@ import {
 } from "@/api/endpoints";
 import { queryKeys } from "@/api/queries";
 import { ChainLaunchError } from "@/lib/chain-launch-error";
-import { type LaunchStep, LaunchFlowError, launchToken } from "@/lib/launch-token";
+import {
+  type LaunchStep,
+  LaunchFlowError,
+  launchToken,
+} from "@/lib/launch-token";
 import { evmPublicClient, solanaConnection } from "@/lib/rpc";
 import { submitBscLaunch } from "@/lib/submit-bsc-launch";
 import { submitSolanaLaunch } from "@/lib/submit-solana-launch";
@@ -27,10 +36,18 @@ export type LaunchView =
 
 const launchApi = {
   uploadLogo: (file: File) => uploadLogo(file),
-  publishMetadata: (body: Parameters<typeof publishMetadata>[0]) => publishMetadata(body),
-  createDeployment: (body: Parameters<typeof createDeployment>[0]) => createDeployment(body),
-  recordSubmission: (id: string, body: Parameters<typeof recordSubmission>[1]) => recordSubmission(id, body),
-  cancelDeployment: (id: string, body: Parameters<typeof cancelDeployment>[1]) => cancelDeployment(id, body),
+  publishMetadata: (body: Parameters<typeof publishMetadata>[0]) =>
+    publishMetadata(body),
+  createDeployment: (body: Parameters<typeof createDeployment>[0]) =>
+    createDeployment(body),
+  recordSubmission: (
+    id: string,
+    body: Parameters<typeof recordSubmission>[1],
+  ) => recordSubmission(id, body),
+  cancelDeployment: (
+    id: string,
+    body: Parameters<typeof cancelDeployment>[1],
+  ) => cancelDeployment(id, body),
   getDeployment: (id: string) => getDeployment(id),
 };
 
@@ -74,10 +91,18 @@ export function useTokenLaunch() {
                   address: evm.address ?? "",
                   submit: async (requested, _metadataUri) => {
                     if (requested.mode !== "bsc-erc20") {
-                      throw new ChainLaunchError("UNKNOWN", "This token is not a BNB Smart Chain launch.", false);
+                      throw new ChainLaunchError(
+                        "UNKNOWN",
+                        "This token is not a BNB Smart Chain launch.",
+                        false,
+                      );
                     }
                     if (!evm.address) {
-                      throw new ChainLaunchError("WALLET_UNAVAILABLE", TX_ERROR_MESSAGES.WALLET_UNAVAILABLE, false);
+                      throw new ChainLaunchError(
+                        "WALLET_UNAVAILABLE",
+                        TX_ERROR_MESSAGES.WALLET_UNAVAILABLE,
+                        false,
+                      );
                     }
                     return submitBscLaunch(
                       evmPublicClient(requested.network),
@@ -87,7 +112,9 @@ export function useTokenLaunch() {
                           await switchChain(config, { chainId });
                         },
                         deployContract: async (args) => {
-                          const wallet = await getWalletClient(config, { chainId: args.chain.id });
+                          const wallet = await getWalletClient(config, {
+                            chainId: args.chain.id,
+                          });
                           return wallet.deployContract(args);
                         },
                       },
@@ -100,12 +127,23 @@ export function useTokenLaunch() {
                   family: "solana",
                   address: solana.publicKey?.toBase58() ?? "",
                   submit: async (requested, metadataUri) => {
-                    if (requested.mode === "bsc-erc20" || !solana.publicKey || !solana.signTransaction) {
-                      throw new ChainLaunchError("WALLET_UNAVAILABLE", TX_ERROR_MESSAGES.WALLET_UNAVAILABLE, false);
+                    if (
+                      requested.mode === "bsc-erc20" ||
+                      !solana.publicKey ||
+                      !solana.signTransaction
+                    ) {
+                      throw new ChainLaunchError(
+                        "WALLET_UNAVAILABLE",
+                        TX_ERROR_MESSAGES.WALLET_UNAVAILABLE,
+                        false,
+                      );
                     }
                     return submitSolanaLaunch(
                       solanaConnection(requested.network),
-                      { publicKey: solana.publicKey, signTransaction: solana.signTransaction },
+                      {
+                        publicKey: solana.publicKey,
+                        signTransaction: solana.signTransaction,
+                      },
                       requested,
                       metadataUri,
                     );
@@ -122,7 +160,8 @@ export function useTokenLaunch() {
     } catch (error) {
       update({
         status: "error",
-        message: error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN,
+        message:
+          error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN,
         deployment: error instanceof LaunchFlowError ? error.deployment : null,
       });
     }

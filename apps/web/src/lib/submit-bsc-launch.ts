@@ -1,6 +1,19 @@
-import { type Address, type Hash, type PublicClient, getAddress, getContractAddress } from "viem";
-import { buildLaunchpadDeployment, classifyEvmError } from "@minthouse/blockchain/bsc";
-import { type BscTokenConfig, getEvmNetwork, toChecksumAddress } from "@minthouse/shared";
+import {
+  type Address,
+  type Hash,
+  type PublicClient,
+  getAddress,
+  getContractAddress,
+} from "viem";
+import {
+  buildLaunchpadDeployment,
+  classifyEvmError,
+} from "@minthouse/blockchain/bsc";
+import {
+  type BscTokenConfig,
+  getEvmNetwork,
+  toChecksumAddress,
+} from "@minthouse/shared";
 import { ChainLaunchError } from "./chain-launch-error";
 import { evmChain } from "./rpc";
 
@@ -23,10 +36,17 @@ function refused(error: unknown): ChainLaunchError {
     return error;
   }
   const classified = classifyEvmError(error);
-  return new ChainLaunchError(classified.code, classified.message, false, { cause: error });
+  return new ChainLaunchError(classified.code, classified.message, false, {
+    cause: error,
+  });
 }
 
-async function readSubmittedNonce(client: PublicClient, hash: Hash, fallbackNonce: number, fallbackFrom: Address): Promise<{ nonce: number; from: Address }> {
+async function readSubmittedNonce(
+  client: PublicClient,
+  hash: Hash,
+  fallbackNonce: number,
+  fallbackFrom: Address,
+): Promise<{ nonce: number; from: Address }> {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
       const transaction = await client.getTransaction({ hash });
@@ -59,7 +79,10 @@ export async function submitBscLaunch(
       await deployer.switchChain(expectedChainId);
     }
     const account = toChecksumAddress(creator);
-    const nonce = await client.getTransactionCount({ address: account, blockTag: "pending" });
+    const nonce = await client.getTransactionCount({
+      address: account,
+      blockTag: "pending",
+    });
     const deployment = buildLaunchpadDeployment(config);
     const txId = await deployer.deployContract({
       abi: deployment.abi,
@@ -70,7 +93,10 @@ export async function submitBscLaunch(
       nonce,
     });
     const submitted = await readSubmittedNonce(client, txId, nonce, account);
-    const tokenAddress = getContractAddress({ from: submitted.from, nonce: BigInt(submitted.nonce) });
+    const tokenAddress = getContractAddress({
+      from: submitted.from,
+      nonce: BigInt(submitted.nonce),
+    });
     return { txId, tokenAddress, evmNonce: submitted.nonce };
   } catch (error) {
     throw refused(error);

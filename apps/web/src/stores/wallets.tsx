@@ -1,6 +1,9 @@
 import "@/polyfills";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
-import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import { type ReactNode, useMemo } from "react";
 import { WagmiProvider } from "wagmi";
@@ -10,7 +13,9 @@ import { rpcUrl } from "@/lib/rpc";
 import { wagmiConfig } from "@/stores/wagmi";
 
 function solanaEndpoint(): string {
-  const solana = env.VITE_ENABLED_NETWORKS.find((network) => NETWORKS[network].family === "solana");
+  const solana = env.VITE_ENABLED_NETWORKS.find(
+    (network) => NETWORKS[network].family === "solana",
+  );
   return rpcUrl(solana ?? "solana-devnet");
 }
 
@@ -20,7 +25,10 @@ function solanaEndpoint(): string {
  */
 export function WalletProviders({ children }: { children: ReactNode }) {
   const endpoint = useMemo(() => solanaEndpoint(), []);
-  const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], []);
+  const wallets = useMemo(
+    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
+    [],
+  );
 
   return (
     <WagmiProvider config={wagmiConfig} reconnectOnMount>

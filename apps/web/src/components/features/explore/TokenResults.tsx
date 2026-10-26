@@ -17,18 +17,27 @@ type TokenResultsProps = {
 
 export function TokenResults({ filters, onClearSearch }: TokenResultsProps) {
   const { t } = useTranslation("explore");
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useSuspenseInfiniteQuery(tokenSearchQuery(filters));
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useSuspenseInfiniteQuery(tokenSearchQuery(filters));
   const tokens = data.pages.flatMap((page) => page.items);
 
   if (tokens.length === 0) {
     return filters.q ? (
-      <EmptyState icon={<SearchX className="size-5" aria-hidden="true" />} title={t("empty.searchTitle", { q: filters.q })} body={t("empty.searchBody")}>
+      <EmptyState
+        icon={<SearchX className="size-5" aria-hidden="true" />}
+        title={t("empty.searchTitle", { q: filters.q })}
+        body={t("empty.searchBody")}
+      >
         <Button variant="secondary" onClick={onClearSearch}>
           {t("empty.clear")}
         </Button>
       </EmptyState>
     ) : (
-      <EmptyState icon={<Sprout className="size-5" aria-hidden="true" />} title={t("empty.noneTitle")} body={t("empty.noneBody")}>
+      <EmptyState
+        icon={<Sprout className="size-5" aria-hidden="true" />}
+        title={t("empty.noneTitle")}
+        body={t("empty.noneBody")}
+      >
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Link to="/app/create" className={buttonStyles()}>
             {t("empty.create")}
@@ -60,7 +69,9 @@ export function TokenResults({ filters, onClearSearch }: TokenResultsProps) {
               void fetchNextPage();
             }}
           >
-            {isFetchingNextPage ? t("pagination.loading") : t("pagination.loadMore")}
+            {isFetchingNextPage
+              ? t("pagination.loading")
+              : t("pagination.loadMore")}
           </Button>
         ) : (
           <p className="text-sm text-fg-subtle">{t("pagination.end")}</p>
@@ -105,7 +116,9 @@ type EmptyStateProps = {
 function EmptyState({ icon, title, body, children }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line-strong px-6 py-16 text-center">
-      <span className="inline-flex size-10 items-center justify-center rounded-full bg-sunken text-fg-muted">{icon}</span>
+      <span className="inline-flex size-10 items-center justify-center rounded-full bg-sunken text-fg-muted">
+        {icon}
+      </span>
       <h2 className="font-display text-2xl text-balance">{title}</h2>
       <p className="max-w-md text-sm text-pretty text-fg-muted">{body}</p>
       <div className="pt-2">{children}</div>
