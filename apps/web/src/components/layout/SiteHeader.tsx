@@ -36,7 +36,7 @@ export function SiteHeader({
         <Link
           to="/app"
           className="hidden h-9 items-center rounded-lg px-3 text-sm text-fg-muted transition-colors duration-150 hover:bg-sunken hover:text-fg data-[status=active]:text-fg sm:inline-flex"
-          activeOptions={{ includeSearch: false }}
+          activeOptions={{ exact: true, includeSearch: false }}
         >
           {t("nav.explore")}
         </Link>
