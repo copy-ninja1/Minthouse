@@ -29,6 +29,27 @@ export const SOLANA_URI_MAX_BYTES = 200;
 export const BSC_NAME_MAX_BYTES = 64;
 export const BSC_SYMBOL_MAX_LENGTH = 11;
 
+export const SOL_DECIMALS = 9;
+export const BNB_DECIMALS = 18;
+export const MAX_SLIPPAGE_BPS = 5_000;
+export const DEFAULT_SLIPPAGE_BPS = 100;
+
+export const slippageBpsField = z
+  .number()
+  .int()
+  .min(1, "Slippage must be at least 0.01%")
+  .max(MAX_SLIPPAGE_BPS, "Slippage above 50% is refused")
+  .default(DEFAULT_SLIPPAGE_BPS);
+
+/** A SOL amount as a decimal string with at most 9 fraction digits, e.g. "0.25". */
+export const solAmountField = z
+  .string()
+  .trim()
+  .regex(
+    /^(?:0|[1-9]\d*)(?:\.\d{1,9})?$/,
+    "Enter a SOL amount like 0.5 (at most 9 decimal places)",
+  );
+
 /** Cross-field checks can run after a field-level failure, so they must not throw. */
 function safeBaseUnits(wholeTokens: string, decimals: number): bigint | null {
   try {
@@ -198,6 +219,13 @@ export const splTokenConfigSchema = z
     /** Whether the Metaplex metadata account can be updated by the update authority later. */
     metadataMutable: z.boolean(),
     ...liquidityFields,
+    /**
+     * SOL spent on a first Raydium swap right after the pool is created so
+     * indexers (DexScreener, Trust Wallet) see trade history and a price.
+     * Zero skips the swap. Must be less than `liquidityNative` when both are set.
+     */
+    initialBuySol: solAmountField.default("0"),
+    slippageBps: slippageBpsField,
   })
   .superRefine((config, ctx) => {
     const raw = safeBaseUnits(config.initialSupply, config.decimals);
@@ -226,28 +254,30 @@ export const splTokenConfigSchema = z
       });
     }
     refineLiquidity(config, SOL_DECIMALS, ctx);
+    const network = getNetwork(config.network);
+    const buy = safeNativeAmount(config.initialBuySol, SOL_DECIMALS);
+    const poolNative = safeNativeAmount(config.liquidityNative, SOL_DECIMALS);
+    if (
+      !network.isLocal &&
+      poolNative !== null &&
+      poolNative > 0n &&
+      (buy === null || buy === 0n)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["initialBuySol"],
+        message:
+          "Buy a little SOL worth of your token after the pool so wallets can show a price chart",
+      });
+    }
+    if (buy !== null && buy > 0n && poolNative !== null && buy >= poolNative) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["initialBuySol"],
+        message: "Initial buy must be smaller than the SOL seeded into the pool",
+      });
+    }
   });
-
-export const SOL_DECIMALS = 9;
-export const BNB_DECIMALS = 18;
-export const MAX_SLIPPAGE_BPS = 5_000;
-export const DEFAULT_SLIPPAGE_BPS = 100;
-
-export const slippageBpsField = z
-  .number()
-  .int()
-  .min(1, "Slippage must be at least 0.01%")
-  .max(MAX_SLIPPAGE_BPS, "Slippage above 50% is refused")
-  .default(DEFAULT_SLIPPAGE_BPS);
-
-/** A SOL amount as a decimal string with at most 9 fraction digits, e.g. "0.25". */
-export const solAmountField = z
-  .string()
-  .trim()
-  .regex(
-    /^(?:0|[1-9]\d*)(?:\.\d{1,9})?$/,
-    "Enter a SOL amount like 0.5 (at most 9 decimal places)",
-  );
 
 export const pumpfunConfigSchema = z.object({
   mode: z.literal("pumpfun"),

@@ -213,13 +213,28 @@ export async function submitSolanaLaunch(
           });
         } catch (liquidityError) {
           const classified = classifySolanaError(liquidityError);
-          const hint =
-            classified.code === "RPC_FAILURE"
-              ? " Your Solana RPC blocked an indexed read Raydium needs — set VITE_SOLANA_MAINNET_RPC_URL to a provider that allows getTokenAccountsByOwner (e.g. Helius), then add the pool on Raydium for this mint."
-              : " Add SOL + token liquidity on Raydium so wallets can show a price and chart.";
+          const detail =
+            liquidityError instanceof Error && liquidityError.message.trim() !== ""
+              ? liquidityError.message
+              : classified.message;
+          let hint: string;
+          switch (classified.code) {
+            case "RPC_FAILURE":
+              hint =
+                " Your Solana RPC blocked an indexed read Raydium needs — set VITE_SOLANA_MAINNET_RPC_URL to a provider that allows getTokenAccountsByOwner (e.g. Helius), then add the pool on Raydium for this mint.";
+              break;
+            case "INSUFFICIENT_FUNDS":
+              hint =
+                " Fund the wallet with enough SOL for pool liquidity + initial buy + ~0.025 SOL fees, then retry pool creation for this mint on Raydium (or launch again).";
+              break;
+            default:
+              hint =
+                " Add SOL + token liquidity on Raydium, then make a small swap so wallets can show a price and chart.";
+              break;
+          }
           throw new ChainLaunchError(
             classified.code === "UNKNOWN" ? "UNKNOWN" : classified.code,
-            `Token created at ${submission.tokenAddress}, but the Raydium pool failed (${classified.message}).${hint}`,
+            `Token created at ${submission.tokenAddress}, but the Raydium pool or initial swap failed (${detail}).${hint}`,
             true,
             { cause: liquidityError, submission },
           );

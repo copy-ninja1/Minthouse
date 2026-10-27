@@ -51,11 +51,12 @@
     "authorityRevoke": "Revoke mint authority now",
     "metadataMutable": "Allow metadata updates later",
     "liquidityNative": "Pool liquidity ({{symbol}})",
-    "liquidityNativeHint": "Paired into a DEX pool so wallets can show a dollar price. Leave 0 only on local networks.",
+    "liquidityNativeHint": "Paired into a Raydium (Solana) or PancakeSwap (BNB) pool so wallets can show a dollar price. Wallet must hold this amount plus the initial buy and ~0.025 SOL for fees.",
     "liquidityTokens": "Tokens in the pool",
     "liquidityTokensHint": "Whole tokens deposited with the native coin. Must not exceed the initial supply. The recipient must be the signing account.",
     "initialBuy": "Initial buy (SOL)",
     "initialBuyHint": "Optional. Bought in the same transaction as the launch. Zero means no buy. A small buy helps price indexers pick the coin up faster.",
+    "initialBuySplHint": "First swap after the Raydium pool is created. Indexers need a trade to show a dollar price and chart in wallets.",
     "slippage": "Slippage (%)",
     "pumpSupply": "Supply and decimals are fixed by Pump.fun: 1,000,000,000 tokens, 6 decimals. Mint authority is removed. The bonding curve gives the token a market price immediately."
   },

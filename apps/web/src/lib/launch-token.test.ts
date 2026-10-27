@@ -29,6 +29,8 @@ const config = splTokenConfigSchema.parse({
   metadataMutable: false,
   liquidityNative: "0.1",
   liquidityTokens: "1000000",
+  initialBuySol: "0.01",
+  slippageBps: 100,
 });
 
 function deployment(overrides: Partial<Deployment> = {}): Deployment {

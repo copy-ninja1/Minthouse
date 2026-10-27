@@ -592,6 +592,33 @@ function ModeFields({
             inputMode="numeric"
             mono
           />
+          {values.mode === "solana-spl" ? (
+            <>
+              <TextField
+                id="initialBuySol"
+                label={t("fields.initialBuy")}
+                value={values.initialBuySol}
+                onChange={(value) => {
+                  onPatch("initialBuySol", value);
+                }}
+                error={errors.initialBuySol}
+                hint={t("fields.initialBuySplHint")}
+                inputMode="decimal"
+                mono
+              />
+              <TextField
+                id="slippagePercent"
+                label={t("fields.slippage")}
+                value={values.slippagePercent}
+                onChange={(value) => {
+                  onPatch("slippagePercent", value);
+                }}
+                error={errors.slippagePercent}
+                inputMode="decimal"
+                mono
+              />
+            </>
+          ) : null}
           {values.mode === "bsc-erc20" ? (
             <label className="flex items-start gap-2 text-sm sm:col-span-2">
               <input

@@ -152,7 +152,8 @@ export function initialCreateForm(
     metadataMutable: false,
     liquidityNative: "0.1",
     liquidityTokens: defaultInitialSupply(mode),
-    initialBuySol: "0",
+    // Small first buy so DexScreener / Trust Wallet see a trade and a price.
+    initialBuySol: mode === "solana-spl" ? "0.01" : "0",
     slippagePercent: "1",
   };
 }
@@ -237,6 +238,8 @@ export function toTokenConfig(
         metadataMutable: values.metadataMutable,
         liquidityNative: values.liquidityNative.trim() || "0",
         liquidityTokens: values.liquidityTokens.trim() || "0",
+        initialBuySol: values.initialBuySol.trim() || "0",
+        slippageBps: slippageBps ?? 1,
       };
       break;
     case "pumpfun":
@@ -263,7 +266,10 @@ export function toTokenConfig(
   if (needsRecipient && decimals === null) {
     errors.decimals = "Enter a whole number of decimals";
   }
-  if (values.mode === "pumpfun" && slippageBps === null) {
+  if (
+    (values.mode === "pumpfun" || values.mode === "solana-spl") &&
+    slippageBps === null
+  ) {
     errors.slippagePercent = "Enter a slippage between 0.01% and 50%";
   }
 

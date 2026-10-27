@@ -1,7 +1,9 @@
 import {
   CREATE_CPMM_POOL_FEE_ACC,
   CREATE_CPMM_POOL_PROGRAM,
+  CurveCalculator,
   DEVNET_PROGRAM_ID,
+  FeeOn,
   Raydium,
   type TokenAccount,
   type TokenAccountRaw,
@@ -38,7 +40,8 @@ export type SolanaLiquiditySigner = {
 };
 
 export type SeedSplLiquidityResult = {
-  txId: string;
+  poolTxId: string;
+  swapTxId: string | null;
   poolId: string;
 };
 
@@ -131,10 +134,43 @@ async function loadMintTokenAccount(
   };
 }
 
+async function loadRaydium(
+  connection: Connection,
+  signer: SolanaLiquiditySigner,
+  accounts: {
+    tokenAccounts: TokenAccount[];
+    tokenAccountRawInfos: TokenAccountRaw[];
+  },
+  cluster: "mainnet" | "devnet",
+): Promise<Raydium> {
+  return Raydium.load({
+    connection,
+    owner: signer.publicKey,
+    cluster,
+    disableFeatureCheck: true,
+    disableLoadToken: true,
+    blockhashCommitment: "confirmed",
+    notSubscribeAccountChange: true,
+    tokenAccounts: accounts.tokenAccounts,
+    tokenAccountRawInfos: accounts.tokenAccountRawInfos,
+    signAllTransactions: async <T extends Transaction | VersionedTransaction>(
+      txs: T[],
+    ): Promise<T[]> => {
+      const signed: T[] = [];
+      for (const tx of txs) {
+        if (tx instanceof Transaction) {
+          throw new Error("Legacy Solana transactions are not supported for Raydium pool creation");
+        }
+        signed.push((await signer.signTransaction(tx)) as T);
+      }
+      return signed;
+    },
+  });
+}
+
 /**
- * Creates a Raydium CPMM pool pairing the new mint with SOL.
- * Call after the mint transaction has confirmed and the signer holds the
- * liquidity token amount (recipient must be the signing account).
+ * Creates a Raydium CPMM pool, then optionally buys with SOL so indexers see a
+ * first trade (DexScreener / Trust Wallet price + chart).
  */
 export async function seedSplLiquidity(
   connection: Connection,
@@ -153,36 +189,23 @@ export async function seedSplLiquidity(
 
   const tokenAmount = wholeTokensToBaseUnits(config.liquidityTokens, config.decimals);
   const nativeAmount = parseTokenAmount(config.liquidityNative, SOL_DECIMALS);
-  const cluster = raydiumCluster(config.network);
-  const { tokenAccounts, tokenAccountRawInfos } = await loadMintTokenAccount(
-    connection,
-    signer.publicKey,
-    mint,
+  const buyLamports = parseTokenAmount(config.initialBuySol, SOL_DECIMALS);
+  // Pool SOL + first swap + rent for pool accounts / WSOL ATA + priority fees.
+  const rentAndFeesBuffer = 25_000_000n; // 0.025 SOL
+  const requiredLamports = nativeAmount + buyLamports + rentAndFeesBuffer;
+  const balance = BigInt(
+    await connection.getBalance(signer.publicKey, "confirmed"),
   );
-
-  const raydium = await Raydium.load({
-    connection,
-    owner: signer.publicKey,
-    cluster,
-    disableFeatureCheck: true,
-    disableLoadToken: true,
-    blockhashCommitment: "confirmed",
-    notSubscribeAccountChange: true,
-    tokenAccounts,
-    tokenAccountRawInfos,
-    signAllTransactions: async <T extends Transaction | VersionedTransaction>(
-      txs: T[],
-    ): Promise<T[]> => {
-      const signed: T[] = [];
-      for (const tx of txs) {
-        if (tx instanceof Transaction) {
-          throw new Error("Legacy Solana transactions are not supported for Raydium pool creation");
-        }
-        signed.push((await signer.signTransaction(tx)) as T);
-      }
-      return signed;
-    },
-  });
+  if (balance < requiredLamports) {
+    const have = Number(balance) / 10 ** SOL_DECIMALS;
+    const need = Number(requiredLamports) / 10 ** SOL_DECIMALS;
+    throw new Error(
+      `Transfer: insufficient lamports ${balance.toString()}, need ${requiredLamports.toString()} (wallet has ~${have.toFixed(4)} SOL, need ~${need.toFixed(4)} SOL for pool liquidity, initial buy, and fees)`,
+    );
+  }
+  const cluster = raydiumCluster(config.network);
+  const accounts = await loadMintTokenAccount(connection, signer.publicKey, mint);
+  const raydium = await loadRaydium(connection, signer, accounts, cluster);
 
   const feeConfigs = await raydium.api.getCpmmConfigs();
   const feeConfig = feeConfigs.find((entry) => entry.index === 0) ?? feeConfigs[0];
@@ -196,7 +219,6 @@ export async function seedSplLiquidity(
     ).publicKey.toBase58();
   }
 
-  // Prefer API metadata for WSOL; on-chain read for the brand-new mint.
   const mintA = await raydium.token.getTokenInfo(WSOLMint);
   const mintB = await raydium.token.getTokenInfo(mint);
 
@@ -209,7 +231,7 @@ export async function seedSplLiquidity(
       ? DEVNET_PROGRAM_ID.CREATE_CPMM_POOL_FEE_ACC
       : CREATE_CPMM_POOL_FEE_ACC;
 
-  const { execute, extInfo } = await raydium.cpmm.createPool({
+  const created = await raydium.cpmm.createPool({
     programId,
     poolFeeAccount,
     mintA,
@@ -227,9 +249,54 @@ export async function seedSplLiquidity(
     },
   });
 
-  const { txId } = await execute({ sendAndConfirm: true });
-  return {
-    txId,
-    poolId: extInfo.address.poolId.toBase58(),
-  };
+  const { txId: poolTxId } = await created.execute({ sendAndConfirm: true });
+  const poolId = created.extInfo.address.poolId.toBase58();
+
+  if (buyLamports === 0n) {
+    return { poolTxId, swapTxId: null, poolId };
+  }
+
+  // Refresh wallet token accounts after the pool pulled liquidity.
+  const afterPool = await loadMintTokenAccount(connection, signer.publicKey, mint);
+  raydium.account.updateTokenAccount(afterPool);
+
+  const { poolInfo, poolKeys, rpcData } = await raydium.cpmm.getPoolInfoFromRpc(poolId);
+  const wsol = WSOLMint.toBase58();
+  const baseIn = poolInfo.mintA.address === wsol;
+  if (!baseIn && poolInfo.mintB.address !== wsol) {
+    throw new Error("Created pool is not paired with SOL");
+  }
+  if (!rpcData.configInfo) {
+    throw new Error("Pool config was missing after creation");
+  }
+
+  const amountIn = new BN(buyLamports.toString());
+  const swapResult = CurveCalculator.swapBaseInput(
+    amountIn,
+    baseIn ? rpcData.baseReserve : rpcData.quoteReserve,
+    baseIn ? rpcData.quoteReserve : rpcData.baseReserve,
+    rpcData.configInfo.tradeFeeRate,
+    rpcData.configInfo.creatorFeeRate,
+    rpcData.configInfo.protocolFeeRate,
+    rpcData.configInfo.fundFeeRate,
+    rpcData.feeOn === FeeOn.BothToken || rpcData.feeOn === FeeOn.OnlyTokenB,
+  );
+
+  const slippage = Math.min(Math.max(config.slippageBps / 10_000, 0.001), 0.5);
+  const swapped = await raydium.cpmm.swap({
+    poolInfo,
+    poolKeys,
+    inputAmount: amountIn,
+    swapResult,
+    slippage,
+    baseIn,
+    txVersion: TxVersion.V0,
+    computeBudgetConfig: {
+      units: 400_000,
+      microLamports: 100_000,
+    },
+  });
+  const { txId: swapTxId } = await swapped.execute({ sendAndConfirm: true });
+
+  return { poolTxId, swapTxId, poolId };
 }

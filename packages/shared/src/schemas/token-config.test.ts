@@ -31,6 +31,8 @@ const baseSpl = {
   metadataMutable: true,
   liquidityNative: "0.1",
   liquidityTokens: "1000000",
+  initialBuySol: "0.01",
+  slippageBps: 100,
 } as const;
 
 describe("tokenConfigSchema", () => {
@@ -214,7 +216,19 @@ describe("tokenConfigSchema", () => {
         network: "solana-local",
         liquidityNative: "0",
         liquidityTokens: "0",
+        initialBuySol: "0",
       }).success,
+    ).toBe(true);
+  });
+
+  it("requires an initial buy when seeding a Raydium pool on mainnet/devnet", () => {
+    const result = tokenConfigSchema.safeParse({
+      ...baseSpl,
+      initialBuySol: "0",
+    });
+    expect(result.success).toBe(false);
+    expect(
+      result.error?.issues.some((issue) => issue.path[0] === "initialBuySol"),
     ).toBe(true);
   });
 });

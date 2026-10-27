@@ -20,14 +20,29 @@ function messageOf(error: unknown): string {
   return typeof error === "string" ? error : "";
 }
 
+function logsOf(error: unknown, logs: string[]): string[] {
+  if (logs.length > 0) {
+    return logs;
+  }
+  if (
+    error instanceof SendTransactionError &&
+    typeof error.logs !== "undefined" &&
+    Array.isArray(error.logs)
+  ) {
+    return error.logs;
+  }
+  return [];
+}
+
 /** Maps Solana wallet-adapter and RPC errors to stable codes and safe messages. */
 export function classifySolanaError(error: unknown, logs: string[] = []): ClassifiedSolanaError {
+  const resolvedLogs = logsOf(error, logs);
   const result = (code: TxErrorCode): ClassifiedSolanaError => ({
     code,
     message: TX_ERROR_MESSAGES[code],
-    ...(logs.length > 0 ? { logs } : {}),
+    ...(resolvedLogs.length > 0 ? { logs: resolvedLogs } : {}),
   });
-  const text = `${messageOf(error)} ${logs.join(" ")}`.toLowerCase();
+  const text = `${messageOf(error)} ${resolvedLogs.join(" ")}`.toLowerCase();
 
   if (error instanceof Error && error.name in WALLET_ERROR_CODES) {
     return result(WALLET_ERROR_CODES[error.name] ?? "UNKNOWN");

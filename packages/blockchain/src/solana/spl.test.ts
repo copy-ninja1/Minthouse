@@ -256,6 +256,13 @@ describe("classifySolanaError", () => {
   it("recognises expiry, funds and RPC failures", () => {
     expect(classifySolanaError(new Error("Blockhash not found")).code).toBe("EXPIRED");
     expect(classifySolanaError(new Error("x"), ["Transfer: insufficient lamports 10, need 20"]).code).toBe("INSUFFICIENT_FUNDS");
+    expect(
+      classifySolanaError(
+        new Error(
+          "Transfer: insufficient lamports 7204537, need 101488440 (wallet has ~0.0072 SOL, need ~0.1015 SOL for pool liquidity, initial buy, and fees)",
+        ),
+      ).code,
+    ).toBe("INSUFFICIENT_FUNDS");
     expect(classifySolanaError(new Error('"AccountNotFound"')).code).toBe("INSUFFICIENT_FUNDS");
     expect(classifySolanaError(new Error('"InsufficientFundsForFee"')).code).toBe("INSUFFICIENT_FUNDS");
     expect(classifySolanaError(new TypeError("Failed to fetch")).code).toBe("RPC_FAILURE");

@@ -85,6 +85,8 @@ describe("launch form", () => {
         metadataMutable: false,
         liquidityNative: values.liquidityNative,
         liquidityTokens: values.liquidityTokens,
+        initialBuySol: values.initialBuySol,
+        slippageBps: 100,
       }),
     );
   });
