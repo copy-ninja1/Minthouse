@@ -2,12 +2,15 @@ import {
   type Address,
   type Hash,
   type PublicClient,
+  type WalletClient,
   getAddress,
   getContractAddress,
 } from "viem";
 import {
   buildLaunchpadDeployment,
   classifyEvmError,
+  seedBscLiquidity,
+  shouldSeedBscLiquidity,
 } from "@minthouse/blockchain/bsc";
 import {
   type BscTokenConfig,
@@ -21,14 +24,10 @@ export type EvmDeployer = {
   chainId: number | undefined;
   /** Switches the wallet onto `chainId` before the deployment is signed. */
   switchChain: (chainId: number) => Promise<void>;
-  deployContract: (args: {
-    abi: ReturnType<typeof buildLaunchpadDeployment>["abi"];
-    bytecode: ReturnType<typeof buildLaunchpadDeployment>["bytecode"];
-    args: ReturnType<typeof buildLaunchpadDeployment>["args"];
-    account: Address;
-    chain: ReturnType<typeof evmChain>;
-    nonce: number;
-  }) => Promise<Hash>;
+  /** Wallet used to deploy and, when configured, seed PancakeSwap liquidity. */
+  walletClient: (
+    chain: ReturnType<typeof evmChain>,
+  ) => Promise<WalletClient>;
 };
 
 function refused(error: unknown): ChainLaunchError {
@@ -64,8 +63,9 @@ async function readSubmittedNonce(
 }
 
 /**
- * Asks the wallet to deploy LaunchpadToken. The contract address is the
- * CREATE address for the nonce the wallet actually used.
+ * Deploys LaunchpadToken, then optionally seeds a PancakeSwap V2 pool so
+ * wallets can show a dollar price. The contract address is the CREATE address
+ * for the nonce the wallet actually used.
  */
 export async function submitBscLaunch(
   client: PublicClient,
@@ -79,17 +79,19 @@ export async function submitBscLaunch(
       await deployer.switchChain(expectedChainId);
     }
     const account = toChecksumAddress(creator);
+    const chain = evmChain(config.network);
+    const wallet = await deployer.walletClient(chain);
     const nonce = await client.getTransactionCount({
       address: account,
       blockTag: "pending",
     });
     const deployment = buildLaunchpadDeployment(config);
-    const txId = await deployer.deployContract({
+    const txId = await wallet.deployContract({
       abi: deployment.abi,
       bytecode: deployment.bytecode,
       args: deployment.args,
       account,
-      chain: evmChain(config.network),
+      chain,
       nonce,
     });
     const submitted = await readSubmittedNonce(client, txId, nonce, account);
@@ -97,7 +99,45 @@ export async function submitBscLaunch(
       from: submitted.from,
       nonce: BigInt(submitted.nonce),
     });
-    return { txId, tokenAddress, evmNonce: submitted.nonce };
+    await client.waitForTransactionReceipt({ hash: txId });
+    const submission = {
+      txId,
+      tokenAddress,
+      evmNonce: submitted.nonce,
+    };
+
+    if (shouldSeedBscLiquidity(config)) {
+      if (getAddress(config.recipient) !== getAddress(account)) {
+        throw new ChainLaunchError(
+          "UNKNOWN",
+          `Token created at ${tokenAddress}, but liquidity needs the recipient to be the signing account. Add BNB + token liquidity on PancakeSwap so wallets can show a price.`,
+          true,
+          { submission },
+        );
+      }
+      try {
+        await seedBscLiquidity({
+          publicClient: client,
+          walletClient: wallet,
+          account,
+          tokenAddress,
+          config,
+        });
+      } catch (liquidityError) {
+        const detail =
+          liquidityError instanceof Error
+            ? liquidityError.message
+            : "unknown error";
+        throw new ChainLaunchError(
+          "UNKNOWN",
+          `Token created at ${tokenAddress}, but the PancakeSwap pool failed (${detail}). Add BNB + token liquidity on PancakeSwap so wallets can show a price and chart.`,
+          true,
+          { cause: liquidityError, submission },
+        );
+      }
+    }
+
+    return submission;
   } catch (error) {
     throw refused(error);
   }

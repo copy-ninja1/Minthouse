@@ -259,6 +259,9 @@ describe("classifySolanaError", () => {
     expect(classifySolanaError(new Error('"AccountNotFound"')).code).toBe("INSUFFICIENT_FUNDS");
     expect(classifySolanaError(new Error('"InsufficientFundsForFee"')).code).toBe("INSUFFICIENT_FUNDS");
     expect(classifySolanaError(new TypeError("Failed to fetch")).code).toBe("RPC_FAILURE");
+    expect(
+      classifySolanaError(new Error('403 Forbidden: {"jsonrpc":"2.0","error":{"code":403,"message":"Access forbidden"}}')).code,
+    ).toBe("RPC_FAILURE");
   });
 
   it("does not guess", () => {

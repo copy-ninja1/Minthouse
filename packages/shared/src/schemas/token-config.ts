@@ -4,9 +4,11 @@ import {
   fitsU64,
   fitsUint256,
   maxDecimalsForWholeTokens,
+  parseTokenAmount,
   wholeTokensToBaseUnits,
 } from "../amounts.js";
 import { LAUNCH_MODE_CAPABILITIES } from "../launch-modes.js";
+import { type NetworkId, getNetwork } from "../networks.js";
 import {
   boundedText,
   descriptionField,
@@ -36,6 +38,107 @@ function safeBaseUnits(wholeTokens: string, decimals: number): bigint | null {
   }
 }
 
+function safeNativeAmount(value: string, decimals: number): bigint | null {
+  try {
+    return parseTokenAmount(value, decimals);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Seeds a DEX pool so wallets and explorers can show a dollar price.
+ * Both sides must be zero (no pool) or both non-zero. Local networks skip the
+ * on-chain pool step even when amounts are set.
+ */
+const liquidityFields = {
+  /** Native coin (BNB / SOL) paired into the pool. */
+  liquidityNative: z
+    .string()
+    .trim()
+    .regex(
+      /^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/,
+      "Enter a native amount like 0.5 (at most 18 decimal places)",
+    )
+    .default("0"),
+  /** Whole tokens deposited into the pool; must not exceed initial supply. */
+  liquidityTokens: wholeTokenAmountField.default("0"),
+};
+
+function refineLiquidity(
+  config: {
+    network: NetworkId;
+    initialSupply: string;
+    liquidityNative: string;
+    liquidityTokens: string;
+  },
+  nativeDecimals: number,
+  ctx: z.RefinementCtx,
+): void {
+  const network = getNetwork(config.network);
+  const native = safeNativeAmount(config.liquidityNative, nativeDecimals);
+  if (native === null) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["liquidityNative"],
+      message: `Enter a ${network.nativeSymbol} amount like 0.5`,
+    });
+    return;
+  }
+  let tokens: bigint;
+  try {
+    tokens = BigInt(config.liquidityTokens);
+  } catch {
+    return;
+  }
+  const supply = (() => {
+    try {
+      return BigInt(config.initialSupply);
+    } catch {
+      return null;
+    }
+  })();
+
+  // Local networks have no DEX. Everywhere else a pool is required so wallets
+  // (Trust Wallet, Phantom, etc.) can show a dollar price and chart.
+  if (native === 0n && tokens === 0n) {
+    if (!network.isLocal) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["liquidityNative"],
+        message: `Add ${network.nativeSymbol} liquidity so wallets can show a dollar price`,
+      });
+      ctx.addIssue({
+        code: "custom",
+        path: ["liquidityTokens"],
+        message: "Add tokens to the pool so the token has a market price",
+      });
+    }
+    return;
+  }
+  if (native === 0n) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["liquidityNative"],
+      message: `Enter a non-zero ${network.nativeSymbol} amount to pair with the tokens`,
+    });
+  }
+  if (tokens === 0n) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["liquidityTokens"],
+      message: "Enter a non-zero token amount for the pool",
+    });
+  }
+  if (supply !== null && tokens > supply) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["liquidityTokens"],
+      message: "Pool tokens cannot exceed the initial supply",
+    });
+  }
+}
+
 const socialFields = {
   description: descriptionField,
   website: websiteField,
@@ -56,6 +159,7 @@ export const bscTokenConfigSchema = z
     recipient: evmAddressField,
     /** When false the contract is deployed with minting permanently disabled. */
     mintingEnabled: z.boolean(),
+    ...liquidityFields,
   })
   .superRefine((config, ctx) => {
     const raw = safeBaseUnits(config.initialSupply, config.decimals);
@@ -76,6 +180,7 @@ export const bscTokenConfigSchema = z
         message: "A fixed-supply token needs a non-zero initial supply",
       });
     }
+    refineLiquidity(config, BNB_DECIMALS, ctx);
   });
 
 export const splTokenConfigSchema = z
@@ -92,6 +197,7 @@ export const splTokenConfigSchema = z
     mintAuthority: z.enum(["retain", "revoke"]),
     /** Whether the Metaplex metadata account can be updated by the update authority later. */
     metadataMutable: z.boolean(),
+    ...liquidityFields,
   })
   .superRefine((config, ctx) => {
     const raw = safeBaseUnits(config.initialSupply, config.decimals);
@@ -119,9 +225,11 @@ export const splTokenConfigSchema = z
           "Revoking mint authority with zero supply would create an unusable token",
       });
     }
+    refineLiquidity(config, SOL_DECIMALS, ctx);
   });
 
 export const SOL_DECIMALS = 9;
+export const BNB_DECIMALS = 18;
 export const MAX_SLIPPAGE_BPS = 5_000;
 export const DEFAULT_SLIPPAGE_BPS = 100;
 

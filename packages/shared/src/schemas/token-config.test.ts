@@ -14,6 +14,8 @@ const baseBsc = {
   initialSupply: "1000000",
   recipient: EVM_RECIPIENT,
   mintingEnabled: true,
+  liquidityNative: "0.1",
+  liquidityTokens: "1000000",
 } as const;
 
 const baseSpl = {
@@ -27,6 +29,8 @@ const baseSpl = {
   recipient: SOLANA_RECIPIENT,
   mintAuthority: "retain",
   metadataMutable: true,
+  liquidityNative: "0.1",
+  liquidityTokens: "1000000",
 } as const;
 
 describe("tokenConfigSchema", () => {
@@ -40,6 +44,7 @@ describe("tokenConfigSchema", () => {
         ...baseSpl,
         decimals: 18,
         initialSupply: "18",
+        liquidityTokens: "18",
       }).success,
     ).toBe(true);
   });
@@ -188,5 +193,28 @@ describe("tokenConfigSchema", () => {
         description: "",
       }).success,
     ).toBe(false);
+  });
+
+  it("requires DEX liquidity on non-local networks", () => {
+    const result = tokenConfigSchema.safeParse({
+      ...baseSpl,
+      liquidityNative: "0",
+      liquidityTokens: "0",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.some((issue) => issue.path[0] === "liquidityNative")).toBe(
+      true,
+    );
+  });
+
+  it("allows zero liquidity on local networks", () => {
+    expect(
+      tokenConfigSchema.safeParse({
+        ...baseSpl,
+        network: "solana-local",
+        liquidityNative: "0",
+        liquidityTokens: "0",
+      }).success,
+    ).toBe(true);
   });
 });

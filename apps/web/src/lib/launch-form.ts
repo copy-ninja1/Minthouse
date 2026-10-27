@@ -7,6 +7,7 @@ import {
   MIN_LOGO_DIMENSION,
   type NetworkId,
   type TokenConfig,
+  getNetwork,
   tokenConfigSchema,
 } from "@minthouse/shared";
 import type { z } from "zod";
@@ -21,6 +22,8 @@ export type CreateField =
   | "decimals"
   | "initialSupply"
   | "recipient"
+  | "liquidityNative"
+  | "liquidityTokens"
   | "initialBuySol"
   | "slippagePercent"
   | "network";
@@ -40,6 +43,10 @@ export type CreateFormValues = {
   mintingEnabled: boolean;
   mintAuthority: "retain" | "revoke";
   metadataMutable: boolean;
+  /** Native coin (BNB/SOL) seeded into the DEX pool. */
+  liquidityNative: string;
+  /** Whole tokens seeded into the DEX pool. */
+  liquidityTokens: string;
   initialBuySol: string;
   /** Percent, not basis points. 1 means 1%. */
   slippagePercent: string;
@@ -59,6 +66,8 @@ const CREATE_FIELDS = [
   "decimals",
   "initialSupply",
   "recipient",
+  "liquidityNative",
+  "liquidityTokens",
   "initialBuySol",
   "slippagePercent",
   "network",
@@ -141,6 +150,8 @@ export function initialCreateForm(
     mintingEnabled: false,
     mintAuthority: "revoke",
     metadataMutable: false,
+    liquidityNative: "0.1",
+    liquidityTokens: defaultInitialSupply(mode),
     initialBuySol: "0",
     slippagePercent: "1",
   };
@@ -211,6 +222,8 @@ export function toTokenConfig(
         initialSupply: values.initialSupply.trim(),
         recipient,
         mintingEnabled: values.mintingEnabled,
+        liquidityNative: values.liquidityNative.trim() || "0",
+        liquidityTokens: values.liquidityTokens.trim() || "0",
       };
       break;
     case "solana-spl":
@@ -222,6 +235,8 @@ export function toTokenConfig(
         recipient,
         mintAuthority: values.mintAuthority,
         metadataMutable: values.metadataMutable,
+        liquidityNative: values.liquidityNative.trim() || "0",
+        liquidityTokens: values.liquidityTokens.trim() || "0",
       };
       break;
     case "pumpfun":
@@ -250,6 +265,21 @@ export function toTokenConfig(
   }
   if (values.mode === "pumpfun" && slippageBps === null) {
     errors.slippagePercent = "Enter a slippage between 0.01% and 50%";
+  }
+
+  const needsPool =
+    (values.mode === "bsc-erc20" || values.mode === "solana-spl") &&
+    !getNetwork(values.network).isLocal;
+  if (needsPool) {
+    const native = values.liquidityNative.trim();
+    const tokens = values.liquidityTokens.trim();
+    if (!native || native === "0") {
+      errors.liquidityNative = `Add ${getNetwork(values.network).nativeSymbol} liquidity so wallets can show a dollar price`;
+    }
+    if (!tokens || tokens === "0") {
+      errors.liquidityTokens =
+        "Add tokens to the pool so the token has a market price";
+    }
   }
 
   if (!parsed.success || Object.keys(errors).length > 0) {

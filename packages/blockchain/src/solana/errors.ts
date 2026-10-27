@@ -51,7 +51,11 @@ export function classifySolanaError(error: unknown, logs: string[] = []): Classi
   if (error instanceof SendTransactionError || /simulation failed/.test(text)) {
     return result("SIMULATION_FAILED");
   }
-  if (/failed to fetch|fetch failed|network request failed|429|503|502|timed out|econnrefused/.test(text)) {
+  if (
+    /failed to fetch|fetch failed|network request failed|access forbidden|\b403\b|\b429\b|\b503\b|\b502\b|timed out|econnrefused|indexed requests require|request blocked|personal token/.test(
+      text,
+    )
+  ) {
     return result("RPC_FAILURE");
   }
   return result("UNKNOWN");

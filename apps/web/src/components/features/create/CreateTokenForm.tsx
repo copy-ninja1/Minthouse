@@ -539,6 +539,12 @@ function ModeFields({
             value={values.initialSupply}
             onChange={(value) => {
               onPatch("initialSupply", value);
+              if (
+                values.liquidityTokens === values.initialSupply ||
+                values.liquidityTokens === ""
+              ) {
+                onPatch("liquidityTokens", value);
+              }
             }}
             error={errors.initialSupply}
             hint={supplyHint}
@@ -558,6 +564,34 @@ function ModeFields({
               mono
             />
           </div>
+          <TextField
+            id="liquidityNative"
+            label={t("fields.liquidityNative", {
+              symbol: NETWORKS[values.network].nativeSymbol,
+            })}
+            value={values.liquidityNative}
+            onChange={(value) => {
+              onPatch("liquidityNative", value);
+            }}
+            error={errors.liquidityNative}
+            hint={t("fields.liquidityNativeHint", {
+              symbol: NETWORKS[values.network].nativeSymbol,
+            })}
+            inputMode="decimal"
+            mono
+          />
+          <TextField
+            id="liquidityTokens"
+            label={t("fields.liquidityTokens")}
+            value={values.liquidityTokens}
+            onChange={(value) => {
+              onPatch("liquidityTokens", value);
+            }}
+            error={errors.liquidityTokens}
+            hint={t("fields.liquidityTokensHint")}
+            inputMode="numeric"
+            mono
+          />
           {values.mode === "bsc-erc20" ? (
             <label className="flex items-start gap-2 text-sm sm:col-span-2">
               <input

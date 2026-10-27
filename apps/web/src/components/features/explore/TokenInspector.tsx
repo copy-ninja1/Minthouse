@@ -1,17 +1,18 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { NETWORKS, type NetworkId, type TokenLookup, shortenAddress } from "@minthouse/shared";
-import { useQueryErrorResetBoundary, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryErrorResetBoundary, useSuspenseQuery } from "@tanstack/react-query";
 import { CatchBoundary } from "@tanstack/react-router";
 import { ArrowUpRight, X } from "lucide-react";
 import { type ReactNode, Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import { tokenLookupQuery } from "@/api/queries";
+import { tokenLookupQuery, tokenMarketQuery } from "@/api/queries";
 import { ModeBadge, NetworkLabel } from "@/components/ui/ChainBadge";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TokenAvatar } from "@/components/ui/TokenAvatar";
 import { formatBaseUnits, formatBps, formatLamportsAsSol, formatTimestamp, safeHttpUrl } from "@/lib/format";
+import { formatUsd } from "@/lib/token-price";
 
 type TokenInspectorProps = {
   target: { network: NetworkId; address: string } | null;
@@ -69,6 +70,9 @@ export function TokenInspector({ target, onClose }: TokenInspectorProps) {
 function InspectorContent({ network, address }: { network: NetworkId; address: string }) {
   const { t } = useTranslation("explore");
   const { data: token } = useSuspenseQuery(tokenLookupQuery(network, address));
+  const { data: market } = useQuery(
+    tokenMarketQuery(network, address, token.pump?.marketCapLamports ?? null),
+  );
   const explorer = NETWORKS[token.network].explorer;
   const supply = formatBaseUnits(token.totalSupply, token.decimals);
   const metadataUrl = safeHttpUrl(token.metadataUri);
@@ -88,6 +92,25 @@ function InspectorContent({ network, address }: { network: NetworkId; address: s
               <span className="rounded border border-line-strong px-1.5 text-xs">{t("inspector.unknownMode")}</span>
             )}
           </Dialog.Description>
+          {market?.priceUsd != null || market?.fdvUsd != null ? (
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-sm tabular-nums">
+              {market.priceUsd != null ? (
+                <span>
+                  <span className="text-xs text-fg-subtle">{t("inspector.price")} </span>
+                  {formatUsd(market.priceUsd)}
+                </span>
+              ) : null}
+              {market.fdvUsd != null ? (
+                <span>
+                  <span className="text-xs text-fg-subtle">{t("inspector.fdv")} </span>
+                  {formatUsd(market.fdvUsd)}
+                </span>
+              ) : null}
+              <span className="text-xs text-fg-subtle">{t("inspector.priceSource", { source: market.source })}</span>
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-fg-subtle">{t("inspector.pricePending")}</p>
+          )}
         </div>
       </header>
 

@@ -180,15 +180,27 @@ export async function launchToken(
   }
 
   let submitted: LaunchSubmission;
+  let postMintError: ChainLaunchError | null = null;
   try {
     submitted = await input.deployer.submit(input.config, metadata.metadataUri);
   } catch (error) {
-    if (error instanceof ChainLaunchError && !error.broadcast) {
-      await cancelQuietly(api, deployment.id, error.code);
+    if (
+      error instanceof ChainLaunchError &&
+      error.submission &&
+      error.broadcast
+    ) {
+      // Mint/deploy landed; a later step (liquidity) failed. Record the token
+      // so verification can finish, then surface the post-mint error.
+      submitted = error.submission;
+      postMintError = error;
+    } else {
+      if (error instanceof ChainLaunchError && !error.broadcast) {
+        await cancelQuietly(api, deployment.id, error.code);
+      }
+      const message =
+        error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN;
+      throw new LaunchFlowError(message, deployment);
     }
-    const message =
-      error instanceof Error ? error.message : TX_ERROR_MESSAGES.UNKNOWN;
-    throw new LaunchFlowError(message, deployment);
   }
 
   deployment = await api.recordSubmission(deployment.id, {
@@ -203,5 +215,9 @@ export async function launchToken(
   });
 
   onStep("verify");
-  return settle(api, deployment.id, schedule);
+  const verified = await settle(api, deployment.id, schedule);
+  if (postMintError) {
+    throw new LaunchFlowError(postMintError.message, verified);
+  }
+  return verified;
 }

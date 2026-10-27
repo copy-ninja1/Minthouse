@@ -83,6 +83,8 @@ describe("launch form", () => {
         recipient: WALLET,
         mintAuthority: "revoke",
         metadataMutable: false,
+        liquidityNative: values.liquidityNative,
+        liquidityTokens: values.liquidityTokens,
       }),
     );
   });

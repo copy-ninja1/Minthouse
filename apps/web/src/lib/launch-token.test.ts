@@ -27,6 +27,8 @@ const config = splTokenConfigSchema.parse({
   recipient: CREATOR,
   mintAuthority: "revoke",
   metadataMutable: false,
+  liquidityNative: "0.1",
+  liquidityTokens: "1000000",
 });
 
 function deployment(overrides: Partial<Deployment> = {}): Deployment {

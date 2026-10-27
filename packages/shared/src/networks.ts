@@ -99,7 +99,10 @@ export const NETWORKS = {
     isMainnet: true,
     isLocal: false,
     nativeSymbol: "SOL",
-    defaultRpcUrl: "https://api.mainnet-beta.solana.com",
+    // Must allow browser CORS and indexed reads (getTokenAccountsByOwner).
+    // PublicNode's free tier blocks those, which breaks Raydium pool creation.
+    // Official api.mainnet-beta.solana.com rejects anonymous browser origins.
+    defaultRpcUrl: "https://public.rpc.solanavibestation.com",
     explorer: solanaExplorer(""),
   },
   "solana-devnet": {

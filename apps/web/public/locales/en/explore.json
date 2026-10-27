@@ -91,6 +91,10 @@
     "platform": "Launched through Minthouse",
     "external": "Not launched through Minthouse",
     "readAt": "Read live from {{network}} at {{time}}.",
+    "price": "Price",
+    "fdv": "Market cap (USD)",
+    "pricePending": "No dollar price yet — add liquidity or wait for indexers",
+    "priceSource": "via {{source}}",
     "pump": {
       "title": "Bonding curve",
       "phase": "Phase",
@@ -99,6 +103,7 @@
       "migrated": "Migrated to AMM",
       "progress": "Curve progress",
       "marketCap": "Market cap",
+      "marketCapUsd": "Market cap (USD)",
       "creator": "Creator"
     }
   }

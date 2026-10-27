@@ -118,11 +118,18 @@ export function useTokenLaunch() {
           switchChain: async (chainId) => {
             await switchChain(config, { chainId });
           },
-          deployContract: async (args) => {
+          walletClient: async (chain) => {
             const wallet = await getWalletClient(config, {
-              chainId: args.chain.id,
+              chainId: chain.id,
             });
-            return wallet.deployContract(args);
+            if (!wallet) {
+              throw new ChainLaunchError(
+                "WALLET_UNAVAILABLE",
+                TX_ERROR_MESSAGES.WALLET_UNAVAILABLE,
+                false,
+              );
+            }
+            return wallet;
           },
         },
         evm.address,
@@ -151,14 +158,12 @@ export function useTokenLaunch() {
         {
           chainId,
           switchChain: () => Promise.resolve(),
-          deployContract: async (args) => {
-            const wallet = createWalletClient({
+          walletClient: async (chain) =>
+            createWalletClient({
               account,
-              chain: args.chain,
+              chain,
               transport: http(rpcUrl(requested.network)),
-            });
-            return wallet.deployContract(args);
-          },
+            }),
         },
         account.address,
         requested,
